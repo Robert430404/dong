@@ -27,6 +27,7 @@ local maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeig
 
 -- Handle fullscreen shift and recalculate the math
 function gameScreen:handleFullscreen() 
+	-- Compute the baseline offsets
 	leftHorizontalOffset = gameScreen.paddleGap
 	leftVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.paddleHeight / 2)
 
@@ -36,6 +37,7 @@ function gameScreen:handleFullscreen()
 	ballHorizontalOffset = (systemConfig:getScreenWidth() / 2) - (gameScreen.ball.width / 2)
 	ballVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.ball.height / 2)
 
+	-- Set the game state
 	gameScreen.leftPaddle.x = leftHorizontalOffset
 	gameScreen.leftPaddle.y = leftVerticalOffset
 
