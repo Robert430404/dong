@@ -1,7 +1,7 @@
 local renderer = require 'screens.renderer'
 local keybindConfig = require 'config.keybindConfig'
 
-function love.update()
+function love.update(dt)
 	renderer:handleHeldkey(love.keyboard.isDown)
 end
 
