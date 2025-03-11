@@ -12,8 +12,14 @@ function renderer:render()
 	self[self.currentScreen]:render()
 end
 
+function renderer:handleFullscreen()
+	self[self.currentScreen]:handleFullscreen()
+end
+
 function renderer:setScreen(screen)
 	self.currentScreen = screen
+
+	self:handleFullscreen()
 end
 
 return renderer
