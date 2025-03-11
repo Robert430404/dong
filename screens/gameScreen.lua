@@ -26,7 +26,16 @@ local gameScreen = {
 local maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.paddleGap;
 
 -- Handle fullscreen shift and recalculate the math
-function gameScreen:handleFullscreen() 
+function gameScreen:handleFullscreen()
+	-- Calculate paddle dimensions
+	gameScreen.paddleHeight = systemConfig:getScreenHeight() / 3
+	gameScreen.paddleWidth = gameScreen.paddleHeight / 10
+
+	gameScreen.paddleVelocity = gameScreen.paddleHeight / 10
+
+	gameScreen.ball.height = gameScreen.paddleHeight / 10
+	gameScreen.ball.width = gameScreen.paddleHeight / 10
+
 	-- Compute the baseline offsets
 	leftHorizontalOffset = gameScreen.paddleGap
 	leftVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.paddleHeight / 2)
