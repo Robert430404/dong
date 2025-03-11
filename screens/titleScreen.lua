@@ -32,4 +32,14 @@ function titleScreen:render()
 	love.graphics.draw( startText, startWidth, startHeight )
 end
 
+function titleScreen:handleKeypresses(key, scancode, isrepeat)
+	-- stubb to conform to the interface
+	return
+end
+
+function titleScreen:handleHeldkey(isDown)
+	-- stubb to conform to the interface
+	return
+end
+
 return titleScreen

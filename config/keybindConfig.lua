@@ -31,6 +31,8 @@ function love.keypressed(key, scancode, isrepeat)
 
     return renderer:setScreen("game")
   end
+
+  renderer:handleKeypresses( key, scancode, isrepeat )
 end
 
 return keybindConfig

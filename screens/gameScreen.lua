@@ -1,8 +1,9 @@
 local systemConfig = require 'config.systemConfig'
 
 local gameScreen = {
+	paddleVelocity = 4,
 	paddleGap = 8,
-	paddleWidth = 30,
+	paddleWidth = 20,
 	paddleHeight = 200,
 	leftPaddle = {
 		x = 0,
@@ -11,6 +12,14 @@ local gameScreen = {
 	rightPaddle = {
 		x = 0,
 		y = 0
+	},
+
+	ballVelocity = 1,
+	ball = {
+		x = 100,
+		y = 100,
+		height = 20,
+		width = 20
 	}
 }
 
@@ -19,14 +28,20 @@ function gameScreen:handleFullscreen()
 	leftHorizontalOffset = gameScreen.paddleGap
 	leftVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.paddleHeight / 2)
 
-	rightHorizontalOffset = systemConfig:getScreenWidth() - gameScreen.paddleWidth - gameScreen.paddleGap
+	rightHorizontalOffset = systemConfig:getScreenWidth() - gameScreen.paddleWidth
 	rightVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.paddleHeight / 2)
+
+	ballHorizontalOffset = (systemConfig:getScreenWidth() / 2) - (gameScreen.ball.width / 2)
+	ballVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.ball.height / 2)
 
 	gameScreen.leftPaddle.x = leftHorizontalOffset
 	gameScreen.leftPaddle.y = leftVerticalOffset
 
 	gameScreen.rightPaddle.x = rightHorizontalOffset
 	gameScreen.rightPaddle.y = rightVerticalOffset
+
+	gameScreen.ball.x = ballHorizontalOffset
+	gameScreen.ball.y = ballVerticalOffset
 end
 
 -- Render the screen
@@ -34,12 +49,54 @@ function gameScreen:render()
 	love.graphics.setColor( love.math.colorFromBytes(46, 207, 133) )
 	
 	self:drawPaddle(self.leftPaddle.x, self.leftPaddle.y)
-
 	self:drawPaddle(self.rightPaddle.x, self.rightPaddle.y)
+
+	love.graphics.setColor( love.math.colorFromBytes(246, 207, 133) )
+	self:drawBall(self.ball.x, self.ball.y)
 end
 
 function gameScreen:drawPaddle(x, y)
-	love.graphics.rectangle( "fill", x,y, self.paddleWidth, self.paddleHeight )
+	love.graphics.rectangle( "fill", x, y, self.paddleWidth, self.paddleHeight )
+end
+
+function gameScreen:drawBall(x, y)
+	love.graphics.rectangle( "fill", x, y, self.ball.width, self.ball.height )
+end
+
+function gameScreen:handleKeypresses(key, scancode, isrepeat)
+	if key == "w" then
+  	self.leftPaddle.y = self.leftPaddle.y - self.paddleVelocity
+  end
+
+  if key == "s" then
+  	self.leftPaddle.y = self.leftPaddle.y + self.paddleVelocity
+  end
+
+  if key == "up" then
+  	self.rightPaddle.y = self.rightPaddle.y - self.paddleVelocity
+  end
+
+  if key == "down" then
+  	self.rightPaddle.y = self.rightPaddle.y + self.paddleVelocity
+  end
+end
+
+function gameScreen:handleHeldkey(isDown)
+	if isDown("w") then
+		self:handleKeypresses("w", "", "")
+	end
+
+	if isDown("s") then
+		self:handleKeypresses("s", "", "")
+	end
+
+	if isDown("up") then
+		self:handleKeypresses("up", "", "")
+	end
+
+	if isDown("down") then
+		self:handleKeypresses("down", "", "")
+	end
 end
 
 return gameScreen

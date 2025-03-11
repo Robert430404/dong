@@ -22,4 +22,12 @@ function renderer:setScreen(screen)
 	self:handleFullscreen()
 end
 
+function renderer:handleKeypresses(key, scancode, isrepeat)
+	self[self.currentScreen]:handleKeypresses(key, scancode, isrepeat)
+end
+
+function renderer:handleHeldkey(isDown)
+	self[self.currentScreen]:handleHeldkey(isDown)
+end
+
 return renderer
