@@ -23,12 +23,14 @@ local gameScreen = {
 	}
 }
 
+local maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.paddleGap;
+
 -- Handle fullscreen shift and recalculate the math
 function gameScreen:handleFullscreen() 
 	leftHorizontalOffset = gameScreen.paddleGap
 	leftVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.paddleHeight / 2)
 
-	rightHorizontalOffset = systemConfig:getScreenWidth() - gameScreen.paddleWidth
+	rightHorizontalOffset = systemConfig:getScreenWidth() - gameScreen.paddleWidth - gameScreen.paddleGap
 	rightVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.paddleHeight / 2)
 
 	ballHorizontalOffset = (systemConfig:getScreenWidth() / 2) - (gameScreen.ball.width / 2)
@@ -42,6 +44,9 @@ function gameScreen:handleFullscreen()
 
 	gameScreen.ball.x = ballHorizontalOffset
 	gameScreen.ball.y = ballVerticalOffset
+
+	-- Set the global
+	maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.paddleGap;
 end
 
 -- Render the screen
@@ -65,19 +70,43 @@ end
 
 function gameScreen:handleKeypresses(key, scancode, isrepeat)
 	if key == "w" then
-  	self.leftPaddle.y = self.leftPaddle.y - self.paddleVelocity
+		local computed = self.leftPaddle.y - self.paddleVelocity
+
+		if computed < self.paddleGap then
+			self.leftPaddle.y = self.paddleGap
+		else
+	  	self.leftPaddle.y = computed
+		end
   end
 
   if key == "s" then
-  	self.leftPaddle.y = self.leftPaddle.y + self.paddleVelocity
+		local computed = self.leftPaddle.y + self.paddleVelocity
+
+		if computed > maxVerticalOffset then
+			self.leftPaddle.y = maxVerticalOffset
+		else
+	  	self.leftPaddle.y = computed
+	  end
   end
 
   if key == "up" then
-  	self.rightPaddle.y = self.rightPaddle.y - self.paddleVelocity
+		local computed = self.rightPaddle.y - self.paddleVelocity
+
+		if computed < 8 then
+			self.rightPaddle.y = self.paddleGap
+		else
+	  	self.rightPaddle.y = computed
+		end
   end
 
   if key == "down" then
-  	self.rightPaddle.y = self.rightPaddle.y + self.paddleVelocity
+		local computed = self.rightPaddle.y + self.paddleVelocity
+
+		if computed > maxVerticalOffset then
+			self.rightPaddle.y = maxVerticalOffset
+		else
+	  	self.rightPaddle.y = computed
+	  end
   end
 end
 
