@@ -1,7 +1,7 @@
 local systemConfig = require 'config.systemConfig'
 
 local gameScreen = {
-	paddleVelocity = 4,
+	paddleVelocity = 8,
 	paddleGap = 8,
 	paddleWidth = 20,
 	paddleHeight = 200,
@@ -52,7 +52,6 @@ end
 -- Render the screen
 function gameScreen:render()
 	love.graphics.setColor( love.math.colorFromBytes(46, 207, 133) )
-	
 	self:drawPaddle(self.leftPaddle.x, self.leftPaddle.y)
 	self:drawPaddle(self.rightPaddle.x, self.rightPaddle.y)
 
