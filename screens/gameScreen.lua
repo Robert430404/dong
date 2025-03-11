@@ -1,35 +1,45 @@
 local systemConfig = require 'config.systemConfig'
 
-local gameScreen = {}
-
--- Initialize assets
-local titleFont = love.graphics.newFont( "assets/doto-regular.ttf", 128 )
-local titleText = love.graphics.newText( titleFont, "The game started" )
-
-local startFont = love.graphics.newFont( "assets/doto-regular.ttf", 52 )
-local startText = love.graphics.newText( startFont, "it is on" )
-
--- Compute offsets for centering
-local titleWidth = (systemConfig:getScreenWidth() / 2) - titleText:getWidth() / 2
-local titleHeight = (systemConfig:getScreenHeight() / 2) - (titleText:getHeight() / 2) - startText:getHeight()
-
-local startWidth = (systemConfig:getScreenWidth() / 2) - startText:getWidth() / 2
-local startHeight = (systemConfig:getScreenHeight() / 2) - (startText:getHeight() / 2) + startText:getHeight()
+local gameScreen = {
+	paddleGap = 8,
+	paddleWidth = 30,
+	paddleHeight = 200,
+	leftPaddle = {
+		x = 0,
+		y = 0
+	},
+	rightPaddle = {
+		x = 0,
+		y = 0
+	}
+}
 
 -- Handle fullscreen shift and recalculate the math
 function gameScreen:handleFullscreen() 
-	titleWidth = (systemConfig:getScreenWidth() / 2) - titleText:getWidth() / 2
-	titleHeight = (systemConfig:getScreenHeight() / 2) - (titleText:getHeight() / 2) - startText:getHeight()
+	leftHorizontalOffset = gameScreen.paddleGap
+	leftVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.paddleHeight / 2)
 
-	startWidth = (systemConfig:getScreenWidth() / 2) - startText:getWidth() / 2
-	startHeight = (systemConfig:getScreenHeight() / 2) - (startText:getHeight() / 2) + startText:getHeight()
+	rightHorizontalOffset = systemConfig:getScreenWidth() - gameScreen.paddleWidth - gameScreen.paddleGap
+	rightVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.paddleHeight / 2)
+
+	gameScreen.leftPaddle.x = leftHorizontalOffset
+	gameScreen.leftPaddle.y = leftVerticalOffset
+
+	gameScreen.rightPaddle.x = rightHorizontalOffset
+	gameScreen.rightPaddle.y = rightVerticalOffset
 end
 
 -- Render the screen
 function gameScreen:render()
 	love.graphics.setColor( love.math.colorFromBytes(46, 207, 133) )
-	love.graphics.draw( titleText, titleWidth, titleHeight )
-	love.graphics.draw( startText, startWidth, startHeight )
+	
+	self:drawPaddle(self.leftPaddle.x, self.leftPaddle.y)
+
+	self:drawPaddle(self.rightPaddle.x, self.rightPaddle.y)
+end
+
+function gameScreen:drawPaddle(x, y)
+	love.graphics.rectangle( "fill", x,y, self.paddleWidth, self.paddleHeight )
 end
 
 return gameScreen
