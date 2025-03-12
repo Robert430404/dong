@@ -120,6 +120,14 @@ function gameScreen:ballDidCollide()
 			return false
 		end
 
+		local computedBallPosition = (ball.y + ball.height) - leftPaddle.y
+		local isTopHalf = computedBallPosition < self.paddleHeight / 2
+		if isTopHalf then
+			self.ballVelocity.y = 1
+		else
+			self.ballVelocity.y = -1
+		end
+
 		self.ball.x = leftPaddle.x + self.paddleWidth
 
 		return true
@@ -132,6 +140,14 @@ function gameScreen:ballDidCollide()
 			self:handleLoss("right")
 
 			return false
+		end
+
+		local computedBallPosition = (ball.y + ball.height) - rightPaddle.y
+		local isTopHalf = computedBallPosition < self.paddleHeight / 2
+		if isTopHalf then
+			self.ballVelocity.y = 1
+		else
+			self.ballVelocity.y = -1
 		end
 
 		self.ball.x = rightPaddle.x -  self.ball.width
