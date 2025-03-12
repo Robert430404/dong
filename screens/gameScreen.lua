@@ -110,6 +110,21 @@ function gameScreen:ballDidCollide()
 	local rightPaddle = self.rightPaddle
 	local ball = self.ball
 
+	-- Handle Bondary Collisions
+	local hitCeiling = ball.y <= self.paddleGap
+	if hitCeiling then
+		self.ballVelocity.y = self.ballVelocity.y * -1
+
+		return false
+	end
+
+	local hitFloor = ball.y + ball.height >= systemConfig:getScreenHeight() - self.paddleGap
+	if hitFloor then
+		self.ballVelocity.y = self.ballVelocity.y * -1
+
+		return false
+	end
+
 	-- Coordinates Collided Left Paddle
 	if ball.x <= (leftPaddle.x + self.paddleWidth) then
 		local isBelowPaddle = ball.y > (leftPaddle.y + self.paddleHeight)
