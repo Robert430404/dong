@@ -1,6 +1,9 @@
 local systemConfig = require 'config.systemConfig'
 
 local gameScreen = {
+	upperBoundary = 0,
+	lowerBoundary = 0,
+
 	paddleVelocity = 8,
 	paddleGap = 8,
 	paddleWidth = 20,
@@ -57,6 +60,9 @@ function gameScreen:handleFullscreen()
 	gameScreen.rightPaddle.x = rightHorizontalOffset
 	gameScreen.rightPaddle.y = rightVerticalOffset
 
+	gameScreen.upperBoundary = self.paddleGap
+	gameScreen.lowerBoundary = systemConfig:getScreenHeight() - self.paddleGap
+
 	self:centerBall()
 
 	-- Set the global
@@ -111,14 +117,14 @@ function gameScreen:ballDidCollide()
 	local ball = self.ball
 
 	-- Handle Bondary Collisions
-	local hitCeiling = ball.y <= self.paddleGap
+	local hitCeiling = ball.y <= self.upperBoundary
 	if hitCeiling then
 		self.ballVelocity.y = self.ballVelocity.y * -1
 
 		return false
 	end
 
-	local hitFloor = ball.y + ball.height >= systemConfig:getScreenHeight() - self.paddleGap
+	local hitFloor = ball.y + ball.height >= self.lowerBoundary
 	if hitFloor then
 		self.ballVelocity.y = self.ballVelocity.y * -1
 
@@ -138,9 +144,9 @@ function gameScreen:ballDidCollide()
 		local computedBallPosition = (ball.y + ball.height) - leftPaddle.y
 		local isTopHalf = computedBallPosition < self.paddleHeight / 2
 		if isTopHalf then
-			self.ballVelocity.y = 1
+			self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
 		else
-			self.ballVelocity.y = -1
+			self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
 		end
 
 		self.ball.x = leftPaddle.x + self.paddleWidth
@@ -160,9 +166,9 @@ function gameScreen:ballDidCollide()
 		local computedBallPosition = (ball.y + ball.height) - rightPaddle.y
 		local isTopHalf = computedBallPosition < self.paddleHeight / 2
 		if isTopHalf then
-			self.ballVelocity.y = 1
+			self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
 		else
-			self.ballVelocity.y = -1
+			self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
 		end
 
 		self.ball.x = rightPaddle.x -  self.ball.width
@@ -206,7 +212,7 @@ end
 
 function gameScreen:handleKeypresses(key, scancode, isrepeat)
 	if key == "space" then
-		self.ballVelocity.x = 1
+		self.ballVelocity.x = 4
 		self.ball.isMoving = true
 	end
 
