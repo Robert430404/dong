@@ -1,13 +1,44 @@
 local systemConfig = require 'config.systemConfig'
 
+local scoreFont = love.graphics.newFont( "assets/doto-regular.ttf", 48 )
+
 local gameScreen = {
 	upperBoundary = 0,
 	lowerBoundary = 0,
 
+	lastLoss = 'none',
+	lossMarker = {
+		x = 0,
+		y = 0
+	},
+
+	scores = {
+		left = {
+			value = love.graphics.newText( scoreFont, "L0 W0" ),
+			score = 0,
+			x = 0,
+			y = 0
+		},
+		right = {
+			value = love.graphics.newText( scoreFont, "L0 W0" ),
+			score = 0,
+			x = 0,
+			y = 0
+		}
+	},
+
+	divider = {
+		x = 0,
+		y = 0,
+		width = 0,
+		height = 0
+	},
+
+	offsetGap = 12,
+
 	paddleVelocity = 8,
-	paddleGap = 8,
-	paddleWidth = 20,
-	paddleHeight = 200,
+	paddleWidth = 0,
+	paddleHeight = 0,
 	leftPaddle = {
 		x = 0,
 		y = 0
@@ -33,48 +64,62 @@ local gameScreen = {
 	}
 }
 
-local maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.paddleGap
+local maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.offsetGap
 
 -- Handle fullscreen shift and recalculate the math
 function gameScreen:handleFullscreen()
+	local centerLine = (systemConfig:getScreenWidth() / 2)
+
+	-- Calculate divider dimensions
+	self.divider.height = systemConfig:getScreenHeight()
+	self.divider.width = self.divider.height / 20
+	self.divider.x = centerLine - (self.divider.width / 2)
+	self.divider.y = 0
+
+	-- Calculate score dimensions
+	self.scores.left.x = (centerLine / 2) - (self.scores.left.value:getWidth() / 2)
+	self.scores.left.y = self.offsetGap
+	self.scores.right.x = centerLine + (centerLine / 2) - (self.scores.right.value:getWidth() / 2)
+	self.scores.right.y = self.offsetGap
+
 	-- Calculate paddle dimensions
-	gameScreen.paddleHeight = systemConfig:getScreenHeight() / 3
-	gameScreen.paddleWidth = gameScreen.paddleHeight / 10
+	self.paddleHeight = systemConfig:getScreenHeight() / 3
+	self.paddleWidth = self.paddleHeight / 10
 
-	gameScreen.paddleVelocity = gameScreen.paddleHeight / 10
+	self.paddleVelocity = self.paddleHeight / 10
 
-	gameScreen.ball.height = gameScreen.paddleHeight / 10
-	gameScreen.ball.width = gameScreen.paddleHeight / 10
+	self.ball.height = self.paddleHeight / 10
+	self.ball.width = self.paddleHeight / 10
 
 	-- Compute the baseline offsets
-	leftHorizontalOffset = gameScreen.paddleGap
-	leftVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.paddleHeight / 2)
+	leftHorizontalOffset = self.offsetGap
+	leftVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.paddleHeight / 2)
 
-	rightHorizontalOffset = systemConfig:getScreenWidth() - gameScreen.paddleWidth - gameScreen.paddleGap
-	rightVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.paddleHeight / 2)
+	rightHorizontalOffset = systemConfig:getScreenWidth() - self.paddleWidth - self.offsetGap
+	rightVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.paddleHeight / 2)
 
 	-- Set the game state
-	gameScreen.leftPaddle.x = leftHorizontalOffset
-	gameScreen.leftPaddle.y = leftVerticalOffset
+	self.leftPaddle.x = leftHorizontalOffset
+	self.leftPaddle.y = leftVerticalOffset
 
-	gameScreen.rightPaddle.x = rightHorizontalOffset
-	gameScreen.rightPaddle.y = rightVerticalOffset
+	self.rightPaddle.x = rightHorizontalOffset
+	self.rightPaddle.y = rightVerticalOffset
 
-	gameScreen.upperBoundary = self.paddleGap
-	gameScreen.lowerBoundary = systemConfig:getScreenHeight() - self.paddleGap
+	self.upperBoundary = self.offsetGap
+	self.lowerBoundary = systemConfig:getScreenHeight() - self.offsetGap
 
 	self:centerBall()
 
 	-- Set the global
-	maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.paddleGap
+	maxVerticalOffset = systemConfig:getScreenHeight() - self.paddleHeight - self.offsetGap
 end
 
 function gameScreen:centerBall()
-	ballHorizontalOffset = (systemConfig:getScreenWidth() / 2) - (gameScreen.ball.width / 2)
-	ballVerticalOffset = (systemConfig:getScreenHeight() / 2) - (gameScreen.ball.height / 2)
+	ballHorizontalOffset = (systemConfig:getScreenWidth() / 2) - (self.ball.width / 2)
+	ballVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.ball.height / 2)
 
-	gameScreen.ball.x = ballHorizontalOffset
-	gameScreen.ball.y = ballVerticalOffset
+	self.ball.x = ballHorizontalOffset
+	self.ball.y = ballVerticalOffset
 end
 
 -- Render the screen
@@ -86,6 +131,17 @@ function gameScreen:render()
 	if self:ballDidCollide() then
 		self:handleBallVelocity()
 	end
+
+	love.graphics.setColor( love.math.colorFromBytes(44, 44, 44) )
+	self:drawDivider(self.divider.x, self.divider.y)
+
+	if self.lastLoss == 'none' then else
+		love.graphics.setColor( love.math.colorFromBytes(99, 22, 22) )
+		self:drawLossMarker()
+	end
+
+	love.graphics.setColor( love.math.colorFromBytes(122, 122, 122) )
+	self:drawScores(self.scores.left, self.scores.right)
 
 	love.graphics.setColor( love.math.colorFromBytes(46, 207, 133) )
 	self:drawPaddle(self.leftPaddle.x, self.leftPaddle.y)
@@ -101,6 +157,21 @@ end
 
 function gameScreen:drawBall(x, y)
 	love.graphics.rectangle( "fill", x, y, self.ball.width, self.ball.height )
+end
+
+function gameScreen:drawDivider(x, y)
+	love.graphics.rectangle( "fill", x, y, self.divider.width, self.divider.height )
+end
+
+function gameScreen:drawScores(left, right)
+	love.graphics.draw( left.value, left.x, left.y )
+	love.graphics.draw( right.value, right.x, right.y )
+end
+
+function gameScreen:drawLossMarker()
+	local lastLoss = self.scores[self.lastLoss]
+
+	love.graphics.rectangle( "fill", lastLoss.x - 2, lastLoss.y + lastLoss.value:getHeight(), lastLoss.value:getWidth(), self.offsetGap )
 end
 
 function gameScreen:calculateBallPosition()
@@ -171,12 +242,10 @@ function gameScreen:handleLeftPaddleCollision()
 	local computedBallPosition = (ball.y + ball.height) - leftPaddle.y
 	local isTopHalf = computedBallPosition < self.paddleHeight / 2
 	if isTopHalf then
-		self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y + self.ball.velocityCompoundFactor
+		self.ballVelocity.y = self.ballVelocity.y + self.ball.velocityCompoundFactor
 	else
-		self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y - self.ball.velocityCompoundFactor
+		self.ballVelocity.y = self.ballVelocity.y - self.ball.velocityCompoundFactor
 	end
-
-	print(self.ballVelocity.y)
 
 	self.ball.x = leftPaddle.x + self.paddleWidth
 end
@@ -188,12 +257,18 @@ function gameScreen:handleRightPaddleCollision()
 	local computedBallPosition = (ball.y + ball.height) - rightPaddle.y
 	local isTopHalf = computedBallPosition < self.paddleHeight / 2
 	if isTopHalf then
-		self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y - self.ball.velocityCompoundFactor
+		if self.ballVelocity.y < 0 then
+			self.ballVelocity.y = self.ballVelocity.y - self.ball.velocityCompoundFactor
+		else
+			self.ballVelocity.y = self.ballVelocity.y + self.ball.velocityCompoundFactor
+		end
 	else
-		self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y + self.ball.velocityCompoundFactor
+		if self.ballVelocity.y < 0 then
+			self.ballVelocity.y = self.ballVelocity.y + self.ball.velocityCompoundFactor
+		else
+			self.ballVelocity.y = self.ballVelocity.y - self.ball.velocityCompoundFactor
+		end
 	end
-
-	print(self.ballVelocity.y)
 
 	self.ball.x = rightPaddle.x -  self.ball.width
 end
@@ -220,26 +295,40 @@ end
 
 function gameScreen:handleLoss(side)
 	self.ball.isMoving = false
+	self.lastLoss = side
 
 	self:centerBall()
 
 	self.ballVelocity.x = 0
 	self.ballVelocity.y = 0
 
-	print(side .. " lost the game")
+	if side == 'left' then
+		self.scores.right.score = self.scores.right.score + 1
+	else
+		self.scores.left.score = self.scores.left.score + 1
+	end
+
+	self.scores.left.value:set( string.format("L%s W%s", self.scores.right.score, self.scores.left.score) )
+	self.scores.right.value:set( string.format("L%s W%s", self.scores.left.score, self.scores.right.score) )
+
+	self:handleFullscreen()
 end
 
 function gameScreen:handleKeypresses(key, scancode, isrepeat)
-	if key == "space" then
-		self.ballVelocity.x = 4
+	if key == "space" and self.ball.isMoving == false then
+		self.ballVelocity.x = self.lastLoss == 'right' and 4 or -4
+		if self.lastLoss == 'none' then
+			self.ballVelocity.x = 4
+		end
+
 		self.ball.isMoving = true
 	end
 
 	if key == "w" then
 		local computed = self.leftPaddle.y - self.paddleVelocity
 
-		if computed < self.paddleGap then
-			self.leftPaddle.y = self.paddleGap
+		if computed < self.offsetGap then
+			self.leftPaddle.y = self.offsetGap
 		else
 	  	self.leftPaddle.y = computed
 		end
@@ -259,7 +348,7 @@ function gameScreen:handleKeypresses(key, scancode, isrepeat)
 		local computed = self.rightPaddle.y - self.paddleVelocity
 
 		if computed < 8 then
-			self.rightPaddle.y = self.paddleGap
+			self.rightPaddle.y = self.offsetGap
 		else
 	  	self.rightPaddle.y = computed
 		end
