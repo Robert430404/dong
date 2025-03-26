@@ -146,6 +146,7 @@ function gameScreen:ballDidCollide()
 		return true
 	end
 
+	-- Coordinates Collided Right Paddle
 	if (ball.x + self.ball.width) >= rightPaddle.x then
 		local isBelowPaddle = ball.y > (rightPaddle.y + self.paddleHeight)
 		local isAbovePaddle = ball.y + ball.height < rightPaddle.y
@@ -170,10 +171,12 @@ function gameScreen:handleLeftPaddleCollision()
 	local computedBallPosition = (ball.y + ball.height) - leftPaddle.y
 	local isTopHalf = computedBallPosition < self.paddleHeight / 2
 	if isTopHalf then
-		self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
+		self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y + self.ball.velocityCompoundFactor
 	else
-		self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
+		self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y - self.ball.velocityCompoundFactor
 	end
+
+	print(self.ballVelocity.y)
 
 	self.ball.x = leftPaddle.x + self.paddleWidth
 end
@@ -185,10 +188,12 @@ function gameScreen:handleRightPaddleCollision()
 	local computedBallPosition = (ball.y + ball.height) - rightPaddle.y
 	local isTopHalf = computedBallPosition < self.paddleHeight / 2
 	if isTopHalf then
-		self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
+		self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y - self.ball.velocityCompoundFactor
 	else
-		self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
+		self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y + self.ball.velocityCompoundFactor
 	end
+
+	print(self.ballVelocity.y)
 
 	self.ball.x = rightPaddle.x -  self.ball.width
 end
