@@ -141,15 +141,7 @@ function gameScreen:ballDidCollide()
 			return false
 		end
 
-		local computedBallPosition = (ball.y + ball.height) - leftPaddle.y
-		local isTopHalf = computedBallPosition < self.paddleHeight / 2
-		if isTopHalf then
-			self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
-		else
-			self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
-		end
-
-		self.ball.x = leftPaddle.x + self.paddleWidth
+		self:handleLeftPaddleCollision()
 
 		return true
 	end
@@ -163,20 +155,42 @@ function gameScreen:ballDidCollide()
 			return false
 		end
 
-		local computedBallPosition = (ball.y + ball.height) - rightPaddle.y
-		local isTopHalf = computedBallPosition < self.paddleHeight / 2
-		if isTopHalf then
-			self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
-		else
-			self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
-		end
-
-		self.ball.x = rightPaddle.x -  self.ball.width
+		self:handleRightPaddleCollision()
 
 		return true
 	end
 
 	return false
+end
+
+function gameScreen:handleLeftPaddleCollision()
+	local leftPaddle = self.leftPaddle
+	local ball = self.ball
+
+	local computedBallPosition = (ball.y + ball.height) - leftPaddle.y
+	local isTopHalf = computedBallPosition < self.paddleHeight / 2
+	if isTopHalf then
+		self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
+	else
+		self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
+	end
+
+	self.ball.x = leftPaddle.x + self.paddleWidth
+end
+
+function gameScreen:handleRightPaddleCollision()
+	local rightPaddle = self.rightPaddle
+	local ball = self.ball
+
+	local computedBallPosition = (ball.y + ball.height) - rightPaddle.y
+	local isTopHalf = computedBallPosition < self.paddleHeight / 2
+	if isTopHalf then
+		self.ballVelocity.y = self.ballVelocity.y == 0 and 0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
+	else
+		self.ballVelocity.y = self.ballVelocity.y == 0 and -0.15 or self.ballVelocity.y * self.ball.velocityCompoundFactor
+	end
+
+	self.ball.x = rightPaddle.x -  self.ball.width
 end
 
 function gameScreen:handleBallVelocity()
