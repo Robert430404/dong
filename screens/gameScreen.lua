@@ -236,41 +236,31 @@ function gameScreen:ballDidCollide()
 end
 
 function gameScreen:handleLeftPaddleCollision()
-	local leftPaddle = self.leftPaddle
-	local ball = self.ball
-
-	local computedBallPosition = (ball.y + ball.height) - leftPaddle.y
-	local isTopHalf = computedBallPosition < self.paddleHeight / 2
-	if isTopHalf then
-		self.ballVelocity.y = self.ballVelocity.y + self.ball.velocityCompoundFactor
-	else
-		self.ballVelocity.y = self.ballVelocity.y - self.ball.velocityCompoundFactor
-	end
-
-	self.ball.x = leftPaddle.x + self.paddleWidth
+	self:handleBallAngle(self.leftPaddle, 'left')
 end
 
 function gameScreen:handleRightPaddleCollision()
-	local rightPaddle = self.rightPaddle
-	local ball = self.ball
+	self:handleBallAngle(self.rightPaddle, 'right')
+end
 
-	local computedBallPosition = (ball.y + ball.height) - rightPaddle.y
-	local isTopHalf = computedBallPosition < self.paddleHeight / 2
-	if isTopHalf then
-		if self.ballVelocity.y < 0 then
-			self.ballVelocity.y = self.ballVelocity.y - self.ball.velocityCompoundFactor
-		else
-			self.ballVelocity.y = self.ballVelocity.y + self.ball.velocityCompoundFactor
-		end
+function gameScreen:handleBallAngle(paddle, side)
+	local ball = self.ball
+	local computedBallPosition = (ball.y + ball.height) - paddle.y
+	local percentageOfPaddle = (computedBallPosition / self.paddleHeight) * 100
+
+	if percentageOfPaddle < 40 then
+		self.ballVelocity.y = (1 * percentageOfPaddle) / 10
+	elseif percentageOfPaddle > 60 then
+		self.ballVelocity.y = ((1 * (percentageOfPaddle - 60)) / 10) * -1
 	else
-		if self.ballVelocity.y < 0 then
-			self.ballVelocity.y = self.ballVelocity.y + self.ball.velocityCompoundFactor
-		else
-			self.ballVelocity.y = self.ballVelocity.y - self.ball.velocityCompoundFactor
-		end
+		self.ballVelocity.y = 0
 	end
 
-	self.ball.x = rightPaddle.x -  self.ball.width
+	if side == 'left' then
+		self.ball.x = paddle.x + self.ball.width
+	else
+		self.ball.x = paddle.x - self.ball.width
+	end
 end
 
 function gameScreen:handleBallVelocity()
