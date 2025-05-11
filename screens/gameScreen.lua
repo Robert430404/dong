@@ -251,7 +251,9 @@ function gameScreen:handleBallAngle(paddle, side)
 	if percentageOfPaddle < 40 then
 		self.ballVelocity.y = (1 * percentageOfPaddle) / 10
 	elseif percentageOfPaddle > 60 then
-		self.ballVelocity.y = ((1 * (percentageOfPaddle - 60)) / 10) * -1
+		local computedBallVelocity = 1 * (percentageOfPaddle - 60)
+
+		self.ballVelocity.y = (computedBallVelocity / 10) * -1
 	else
 		self.ballVelocity.y = 0
 	end
