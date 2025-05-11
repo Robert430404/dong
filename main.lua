@@ -1,6 +1,10 @@
 local renderer = require 'screens.renderer'
 local keybindConfig = require 'config.keybindConfig'
 
+function love.resize()
+	renderer:handleFullscreen()
+end
+
 function love.update(dt)
 	renderer:handleHeldkey(love.keyboard.isDown)
 end
