@@ -12,6 +12,10 @@ function renderer:render()
 	self[self.currentScreen]:render()
 end
 
+function renderer:advanceFrame()
+	self[self.currentScreen]:advanceFrame()
+end
+
 function renderer:handleFullscreen()
 	self[self.currentScreen]:handleFullscreen()
 end

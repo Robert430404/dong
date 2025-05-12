@@ -1,12 +1,26 @@
 local renderer = require 'screens.renderer'
 local keybindConfig = require 'config.keybindConfig'
+local systemConfig = require 'config.systemConfig'
+
+local initTime
+
+function love.load()
+	initTime = love.timer.getTime()
+end
 
 function love.resize()
 	renderer:handleFullscreen()
 end
 
 function love.update(dt)
-	renderer:handleHeldkey(love.keyboard.isDown)
+	local currentTime = love.timer.getTime()
+	local timeDelta = currentTime - initTime
+
+	if timeDelta > 1 / systemConfig:getTargetFrames() then
+		renderer:advanceFrame()
+		renderer:handleHeldkey(love.keyboard.isDown)
+		initTime = love.timer.getTime()
+	end
 end
 
 function love.draw()

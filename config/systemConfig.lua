@@ -8,4 +8,8 @@ function systemConfig:getScreenHeight()
   return love.graphics.getHeight()
 end
 
+function systemConfig:getTargetFrames()
+  return 60
+end
+
 return systemConfig

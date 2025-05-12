@@ -58,10 +58,12 @@ local gameScreen = {
 		height = 20,
 		width = 20,
 		isMoving = false,
-		maxXVelocity = 15,
-		maxYVelocity = 15,
-		velocityCompoundFactor = 1.5
-	}
+		maxXVelocity = 30,
+		maxYVelocity = 30,
+		velocityCompoundFactor = 2
+	},
+
+	isTweening = false
 }
 
 local maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.offsetGap
@@ -114,6 +116,16 @@ function gameScreen:handleFullscreen()
 	maxVerticalOffset = systemConfig:getScreenHeight() - self.paddleHeight - self.offsetGap
 end
 
+function gameScreen:advanceFrame()
+	if self.ball.isMoving then
+		self:calculateBallPosition()
+	end
+
+	if self:ballDidCollide() then
+		self:handleBallVelocity()
+	end
+end
+
 function gameScreen:centerBall()
 	ballHorizontalOffset = (systemConfig:getScreenWidth() / 2) - (self.ball.width / 2)
 	ballVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.ball.height / 2)
@@ -124,14 +136,6 @@ end
 
 -- Render the screen
 function gameScreen:render()
-	if self.ball.isMoving then
-		self:calculateBallPosition()
-	end
-
-	if self:ballDidCollide() then
-		self:handleBallVelocity()
-	end
-
 	love.graphics.setColor( love.math.colorFromBytes(44, 44, 44) )
 	self:drawDivider(self.divider.x, self.divider.y)
 
@@ -310,7 +314,7 @@ function gameScreen:handleKeypresses(key, scancode, isrepeat)
 	if key == "space" and self.ball.isMoving == false then
 		self.ballVelocity.x = self.lastLoss == 'right' and 4 or -4
 		if self.lastLoss == 'none' then
-			self.ballVelocity.x = 4
+			self.ballVelocity.x = 8
 		end
 
 		self.ball.isMoving = true
