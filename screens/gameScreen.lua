@@ -129,14 +129,6 @@ function gameScreen:advanceFrame()
 	end
 end
 
-function gameScreen:centerBall()
-	ballHorizontalOffset = (systemConfig:getScreenWidth() / 2) - (self.ball.width / 2)
-	ballVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.ball.height / 2)
-
-	self.ball.x = ballHorizontalOffset
-	self.ball.y = ballVerticalOffset
-end
-
 -- Render the screen
 function gameScreen:render()
 	love.graphics.setColor( love.math.colorFromBytes(44, 44, 44) )
@@ -175,6 +167,14 @@ function gameScreen:drawScores(left, right)
 	love.graphics.draw( right.value, right.x, right.y )
 end
 
+function gameScreen:centerBall()
+	ballHorizontalOffset = (systemConfig:getScreenWidth() / 2) - (self.ball.width / 2)
+	ballVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.ball.height / 2)
+
+	self.ball.x = ballHorizontalOffset
+	self.ball.y = ballVerticalOffset
+end
+
 function gameScreen:drawLossMarker()
 	local lastLoss = self.scores[self.lastLoss]
 
@@ -182,16 +182,18 @@ function gameScreen:drawLossMarker()
 end
 
 function gameScreen:calculateBallPosition()
-	local computedX = self.ball.x + self.ballVelocity.x
+	local computedX
 	if self.ball.direction.x == 'left' then
-		computedX =  self.ball.x - self.ballVelocity.x
+		computedX = self.ball.x - self.ballVelocity.x
+	else
+		computedX = self.ball.x + self.ballVelocity.x
 	end
 
 	self.ball.x = computedX
 
-	local computedY = self.ball.y + self.ballVelocity.y
+	local computedY
 	if self.ball.direction.y == 'up' then
-		computedY =  self.ball.y - self.ballVelocity.y
+		computedY = self.ball.y - self.ballVelocity.y
 	elseif self.ball.direction.y == 'down' then
 		computedY = self.ball.y + self.ballVelocity.y
 	else
