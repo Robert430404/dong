@@ -62,6 +62,7 @@ local gameScreen = {
 			x = 'right',
 			y = 'none'
 		},
+		initialVelocity = 8,
 		maxXVelocity = 30,
 		maxYVelocity = 30,
 		velocityCompoundFactor = 2
@@ -336,7 +337,7 @@ function gameScreen:handleKeypresses(key, scancode, isrepeat)
 	if key == "space" and self.ball.isMoving == false then
 		self.ballVelocity.x = self.lastLoss == 'right' and 4 or -4
 		if self.lastLoss == 'none' then
-			self.ballVelocity.x = 8
+			self.ballVelocity.x = self.ball.initialVelocity
 		end
 
 		self.ball.isMoving = true
