@@ -58,12 +58,14 @@ local gameScreen = {
 		height = 20,
 		width = 20,
 		isMoving = false,
+		direction = {
+			x = 'right',
+			y = 'none'
+		},
 		maxXVelocity = 30,
 		maxYVelocity = 30,
 		velocityCompoundFactor = 2
 	},
-
-	isTweening = false
 }
 
 local maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.offsetGap
@@ -85,7 +87,7 @@ function gameScreen:handleFullscreen()
 	self.scores.right.y = self.offsetGap
 
 	-- Calculate paddle dimensions
-	self.paddleHeight = systemConfig:getScreenHeight() / 3
+	self.paddleHeight = systemConfig:getScreenHeight() / 4
 	self.paddleWidth = self.paddleHeight / 10
 
 	self.paddleVelocity = self.paddleHeight / 10
@@ -180,9 +182,21 @@ end
 
 function gameScreen:calculateBallPosition()
 	local computedX = self.ball.x + self.ballVelocity.x
+	if self.ball.direction.x == 'left' then
+		computedX =  self.ball.x - self.ballVelocity.x
+	end
+
 	self.ball.x = computedX
 
 	local computedY = self.ball.y + self.ballVelocity.y
+	if self.ball.direction.y == 'up' then
+		computedY =  self.ball.y - self.ballVelocity.y
+	elseif self.ball.direction.y == 'down' then
+		computedY = self.ball.y + self.ballVelocity.y
+	else
+		computedY = self.ball.y
+	end
+
 	self.ball.y = computedY
 end
 
@@ -253,18 +267,23 @@ function gameScreen:handleBallAngle(paddle, side)
 	local percentageOfPaddle = (computedBallPosition / self.paddleHeight) * 100
 
 	if percentageOfPaddle < 40 then
+		self.ball.direction.y = 'up'
 		self.ballVelocity.y = (1 * percentageOfPaddle) / 10
 	elseif percentageOfPaddle > 60 then
 		local computedBallVelocity = 1 * (percentageOfPaddle - 60)
 
-		self.ballVelocity.y = (computedBallVelocity / 10) * -1
+		self.ball.direction.y = 'down'
+		self.ballVelocity.y = computedBallVelocity / 10
 	else
+		self.ball.direction.y = 'none'
 		self.ballVelocity.y = 0
 	end
 
 	if side == 'left' then
+		self.ball.direction.x = 'right'
 		self.ball.x = paddle.x + self.ball.width
 	else
+		self.ball.direction.x = 'left'
 		self.ball.x = paddle.x - self.ball.width
 	end
 end
@@ -274,16 +293,19 @@ function gameScreen:handleBallVelocity()
 	local maxYVelocity = self.ball.maxYVelocity
 	local compoundFactor = self.ball.velocityCompoundFactor
 
-	local computedX = (self.ballVelocity.x * -1) * compoundFactor
-	if computedX <= (maxXVelocity * -1) or computedX >= maxXVelocity then
-		self.ballVelocity.x = self.ballVelocity.x * -1
+	local velocityX = self.ballVelocity.x
+	local velocityY = self.ballVelocity.y
+
+	local computedX = velocityX + compoundFactor
+	if computedX >= maxXVelocity then
+		self.ballVelocity.x = self.ballVelocity.x
 	else
 		self.ballVelocity.x = computedX
 	end
 
-	local computedY = (self.ballVelocity.y * -1) * compoundFactor
-	if computedY <= (maxYVelocity * -1) or computedY >= maxYVelocity then
-		self.ballVelocity.y = self.ballVelocity.y * -1
+	local computedY = velocityY + compoundFactor
+	if computedY >= maxYVelocity then
+		self.ballVelocity.y = self.ballVelocity.y
 	else
 		self.ballVelocity.y = computedY
 	end
