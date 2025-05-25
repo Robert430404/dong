@@ -1,7 +1,7 @@
 local renderer = require 'screens.renderer'
 
 local keybindConfig = {
-	isFullscreen = false,
+	isFullscreen = true,
 	isInGame = false
 }
 
