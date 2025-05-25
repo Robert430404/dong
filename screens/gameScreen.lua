@@ -68,9 +68,11 @@ local gameScreen = {
 		maxYVelocity = 30,
 		velocityCompoundFactor = 2
 	},
+
+	maxVerticalOffset = 0
 }
 
-local maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.offsetGap
+gameScreen.maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.offsetGap
 
 -- Handle fullscreen shift and recalculate the math
 function gameScreen:handleFullscreen()
@@ -117,7 +119,7 @@ function gameScreen:handleFullscreen()
 	self:centerBall()
 
 	-- Set the global
-	maxVerticalOffset = systemConfig:getScreenHeight() - self.paddleHeight - self.offsetGap
+	self.maxVerticalOffset = systemConfig:getScreenHeight() - self.paddleHeight - self.offsetGap
 end
 
 function gameScreen:advanceFrame()
@@ -361,8 +363,8 @@ function gameScreen:handleKeypresses(key, scancode, isrepeat)
 	if key == "s" then
 		local computed = self.leftPaddle.y + self.paddleVelocity
 
-		if computed > maxVerticalOffset then
-			self.leftPaddle.y = maxVerticalOffset
+		if computed > self.maxVerticalOffset then
+			self.leftPaddle.y = self.maxVerticalOffset
 		else
 			self.leftPaddle.y = computed
 		end
@@ -385,8 +387,8 @@ function gameScreen:handleKeypresses(key, scancode, isrepeat)
 	if key == "down" then
 		local computed = self.rightPaddle.y + self.paddleVelocity
 
-		if computed > maxVerticalOffset then
-			self.rightPaddle.y = maxVerticalOffset
+		if computed > self.maxVerticalOffset then
+			self.rightPaddle.y = self.maxVerticalOffset
 		else
 			self.rightPaddle.y = computed
 		end
