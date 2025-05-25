@@ -100,7 +100,6 @@ function titleScreen:advanceFrame()
 end
 
 function titleScreen:handleKeypresses(key, scancode, isrepeat)
-	print(key)
 	if key == 'left' then
 		selectedMode = 'one_player'
 
@@ -109,7 +108,7 @@ function titleScreen:handleKeypresses(key, scancode, isrepeat)
 
 	if key == 'right' then
 		selectedMode = 'two_player'
-		
+
 		self:handleModeSelection()
 	end
 
