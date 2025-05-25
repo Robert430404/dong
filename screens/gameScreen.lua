@@ -354,43 +354,43 @@ function gameScreen:handleKeypresses(key, scancode, isrepeat)
 		if computed < self.offsetGap then
 			self.leftPaddle.y = self.offsetGap
 		else
-	  	self.leftPaddle.y = computed
+			self.leftPaddle.y = computed
 		end
-  end
+	end
 
-  if key == "s" then
+	if key == "s" then
 		local computed = self.leftPaddle.y + self.paddleVelocity
 
 		if computed > maxVerticalOffset then
 			self.leftPaddle.y = maxVerticalOffset
 		else
-	  	self.leftPaddle.y = computed
-	  end
-  end
+			self.leftPaddle.y = computed
+		end
+	end
 
-  if opponent.isEnabled then
-  	return
-  end
+	if opponent.isEnabled then
+		return
+	end
 
-  if key == "up" then
+	if key == "up" then
 		local computed = self.rightPaddle.y - self.paddleVelocity
 
 		if computed < 8 then
 			self.rightPaddle.y = self.offsetGap
 		else
-	  	self.rightPaddle.y = computed
+			self.rightPaddle.y = computed
 		end
-  end
+	end
 
-  if key == "down" then
+	if key == "down" then
 		local computed = self.rightPaddle.y + self.paddleVelocity
 
 		if computed > maxVerticalOffset then
 			self.rightPaddle.y = maxVerticalOffset
 		else
-	  	self.rightPaddle.y = computed
-	  end
-  end
+			self.rightPaddle.y = computed
+		end
+	end
 end
 
 function gameScreen:handleHeldkey(isDown)

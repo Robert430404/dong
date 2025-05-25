@@ -22,17 +22,17 @@ function love.keypressed(key, scancode, isrepeat)
 		return keybindConfig:handleFullscreen();
 	end
 
-  if key == "escape" then
-    return love.event.quit()
-  end
+	if key == "escape" then
+		return love.event.quit()
+	end
 
-  if key == "return" and not keybindConfig.isInGame then
-  	keybindConfig.isInGame = true
+	if key == "return" and not keybindConfig.isInGame then
+		keybindConfig.isInGame = true
 
-    return renderer:setScreen("game")
-  end
+		return renderer:setScreen("game")
+	end
 
-  renderer:handleKeypresses( key, scancode, isrepeat )
+	renderer:handleKeypresses( key, scancode, isrepeat )
 end
 
 return keybindConfig
