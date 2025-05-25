@@ -94,11 +94,6 @@ function titleScreen:drawModeSelector()
 	love.graphics.rectangle( "fill", currentMode.width, currentMode.height + currentMode.text:getHeight(), currentMode.text:getWidth(), 8 )
 end
 
-function titleScreen:advanceFrame()
-	-- stubb to conform to the interface
-	return
-end
-
 function titleScreen:handleKeypresses(key, scancode, isrepeat)
 	if key == 'left' then
 		selectedMode = 'one_player'
@@ -112,6 +107,11 @@ function titleScreen:handleKeypresses(key, scancode, isrepeat)
 		self:handleModeSelection()
 	end
 
+	return
+end
+
+function titleScreen:advanceFrame()
+	-- stubb to conform to the interface
 	return
 end
 

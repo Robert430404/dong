@@ -1,4 +1,5 @@
 local systemConfig = require 'config.systemConfig'
+local opponent = require 'opponent'
 
 local scoreFont = love.graphics.newFont( "assets/doto-regular.ttf", 48 )
 
@@ -120,6 +121,8 @@ function gameScreen:handleFullscreen()
 end
 
 function gameScreen:advanceFrame()
+	opponent:run(self)
+
 	if self.ball.isMoving then
 		self:calculateBallPosition()
 	end
@@ -363,6 +366,10 @@ function gameScreen:handleKeypresses(key, scancode, isrepeat)
 		else
 	  	self.leftPaddle.y = computed
 	  end
+  end
+
+  if opponent.isEnabled then
+  	return
   end
 
   if key == "up" then
