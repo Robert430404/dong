@@ -8,11 +8,15 @@ love = {
 			return { getWidth = function() return 100 end, getHeight = function() return 40 end, set = function() end }
 		end
 	},
-	keyboard = { isDown = function() return false end },
+	keyboard = {
+		isDown = function() return false end,
+		setTextInput = function(enabled) assert(enabled == false, 'game must disable text input') end
+	},
 	window = {}, event = {}
 }
 
 require 'main'
+love.load()
 local renderer = require 'screens.renderer'
 local game = require 'screens.gameScreen'
 local opponent = require 'opponent'
@@ -33,6 +37,14 @@ assert(steps == 60, '30 Hz update count: ' .. steps)
 renderer.advanceFrame = originalAdvance
 
 game:handleFullscreen()
+local startY = game.leftPaddle.y
+game:handleHeldkey(function(key) return key == 'w' end)
+near(game.leftPaddle.y, startY - game.paddleVelocity)
+game:handleHeldkey(function(key) return key == 's' end)
+near(game.leftPaddle.y, startY)
+game:handleHeldkey(function(key) return key == 'w' or key == 's' end)
+near(game.leftPaddle.y, startY)
+
 game.ball.isMoving = true
 game.ball.x, game.ball.y = 500, game.upperBoundary + 1
 game.ballVelocity.x, game.ballVelocity.y = 8, -4

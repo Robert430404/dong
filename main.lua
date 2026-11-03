@@ -8,6 +8,7 @@ local accumulator = 0
 
 function love.load()
 	math.randomseed(os.time())
+	love.keyboard.setTextInput(false)
 end
 
 function love.resize()
