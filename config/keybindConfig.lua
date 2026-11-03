@@ -9,8 +9,6 @@ function keybindConfig:handleFullscreen()
 	self.isFullscreen = not self.isFullscreen
 
 	love.window.setFullscreen( self.isFullscreen, "exclusive" )
-
-	renderer:handleFullscreen()
 end
 
 function keybindConfig:handleEscape()

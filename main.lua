@@ -11,10 +11,6 @@ function love.load()
 	love.keyboard.setTextInput(false)
 end
 
-function love.resize()
-	renderer:handleFullscreen()
-end
-
 function love.update(dt)
 	accumulator = accumulator + math.min(dt, 0.25)
 	while accumulator >= step do
@@ -25,6 +21,11 @@ function love.update(dt)
 end
 
 function love.draw()
+	local scale, offsetX, offsetY = systemConfig:getViewport()
+	love.graphics.push()
+	love.graphics.translate(offsetX, offsetY)
+	love.graphics.scale(scale)
 	love.graphics.setColor( love.math.colorFromBytes(255, 255, 255) )
 	renderer:render()
+	love.graphics.pop()
 end

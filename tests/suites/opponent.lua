@@ -1,6 +1,39 @@
 local support = require 'tests.support'
 
+local function playStraightApproach(difficulty)
+	local fixture = support.newGame()
+	local game = fixture.game
+	local opponent = fixture.opponent
+	opponent:setDifficulty(difficulty)
+	opponent:setStatus(true)
+	opponent.random = function() return 0.95 end
+	game.ball.isMoving = true
+	game.ball.x = game.rightPaddle.x - game.ball.width - 800
+	game.ball.y = 360
+	game.ballVelocity.x, game.ballVelocity.y = 8, 0
+
+	for i = 1, 100 do
+		game:advanceFrame()
+	end
+
+	return game
+end
+
 return {
+	{
+		name = 'easy can miss a reachable straight shot',
+		run = function()
+			local game = playStraightApproach('easy')
+			assert(game.scores.left.score == 1, 'easy opponent should miss with a large aim error')
+		end
+	},
+	{
+		name = 'hard returns the same straight shot',
+		run = function()
+			local game = playStraightApproach('hard')
+			assert(game.scores.left.score == 0 and game.ballVelocity.x < 0, 'hard opponent should return the shot')
+		end
+	},
 	{
 		name = 'opponent chooses a bounded target without moving the ball',
 		run = function()

@@ -18,24 +18,36 @@ function support.newGame()
 	local textInput = nil
 	local screenWidth = 1280
 	local screenHeight = 720
+	local drawnText = {}
+	local transform = {}
 	love = {
 		graphics = {
 			getWidth = function() return screenWidth end,
 			getHeight = function() return screenHeight end,
 			newFont = function() return {} end,
-			newText = function()
+			newText = function(font, value)
+				local text = value
 				return {
 					getWidth = function() return 100 end,
 					getHeight = function() return 40 end,
-					set = function() end
+					set = function(_, newText) text = newText end,
+					getText = function() return text end
 				}
-			end
+			end,
+			setColor = function() end,
+			draw = function(text) table.insert(drawnText, text:getText()) end,
+			rectangle = function() end,
+			push = function() end,
+			pop = function() end,
+			translate = function(x, y) transform.x, transform.y = x, y end,
+			scale = function(scale) transform.scale = scale end
 		},
+		math = { colorFromBytes = function(...) return ... end },
 		keyboard = {
 			isDown = function() return false end,
 			setTextInput = function(enabled) textInput = enabled end
 		},
-		window = {},
+		window = { setFullscreen = function() end },
 		event = {}
 	}
 
@@ -53,6 +65,12 @@ function support.newGame()
 	function fixture:setScreenSize(width, height)
 		screenWidth = width
 		screenHeight = height
+	end
+	function fixture:getDrawnText()
+		return drawnText
+	end
+	function fixture:getTransform()
+		return transform
 	end
 
 	return fixture

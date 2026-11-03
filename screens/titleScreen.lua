@@ -25,6 +25,11 @@ local modes = {
 	}
 }
 
+local difficultyFont = love.graphics.newFont( "assets/doto-regular.ttf", 24 )
+local difficulties = { 'easy', 'normal', 'hard' }
+local selectedDifficulty = 2
+local difficultyText = love.graphics.newText( difficultyFont, "[UP/DOWN] DIFFICULTY: NORMAL" )
+
 -- Compute offsets for centering
 local titleWidth = (systemConfig:getScreenWidth() / 2) - titleText:getWidth() / 2
 local titleHeight = (systemConfig:getScreenHeight() / 2) - (titleText:getHeight() / 2) - startText:getHeight()
@@ -56,6 +61,12 @@ function titleScreen:render()
 		self:calculateModeOffsets( index )
 
 		love.graphics.draw( mode.text, mode.width, mode.height )
+	end
+
+	if selectedMode == 'one_player' then
+		local difficultyWidth = (systemConfig:getScreenWidth() - difficultyText:getWidth()) / 2
+		local difficultyHeight = modes[1].height + modes[1].text:getHeight() + 24
+		love.graphics.draw( difficultyText, difficultyWidth, difficultyHeight )
 	end
 
 	love.graphics.setColor( love.math.colorFromBytes(99, 22, 22) )
@@ -94,6 +105,13 @@ function titleScreen:drawModeSelector()
 	love.graphics.rectangle( "fill", currentMode.width, currentMode.height + currentMode.text:getHeight(), currentMode.text:getWidth(), 8 )
 end
 
+function titleScreen:changeDifficulty(direction)
+	selectedDifficulty = math.max(1, math.min(#difficulties, selectedDifficulty + direction))
+	local difficulty = difficulties[selectedDifficulty]
+	opponent:setDifficulty(difficulty)
+	difficultyText:set( "[UP/DOWN] DIFFICULTY: " .. string.upper(difficulty) )
+end
+
 function titleScreen:handleKeypresses(key, scancode, isrepeat)
 	if key == 'left' then
 		selectedMode = 'one_player'
@@ -105,6 +123,14 @@ function titleScreen:handleKeypresses(key, scancode, isrepeat)
 		selectedMode = 'two_player'
 
 		self:handleModeSelection()
+	end
+
+	if selectedMode == 'one_player' then
+		if key == 'up' then
+			self:changeDifficulty(-1)
+		elseif key == 'down' then
+			self:changeDifficulty(1)
+		end
 	end
 
 	return

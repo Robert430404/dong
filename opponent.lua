@@ -1,13 +1,34 @@
+local difficulties = {
+	easy = { reactionSteps = 30, speedFactor = 0.40, errorFraction = 1.00 },
+	normal = { reactionSteps = 21, speedFactor = 0.65, errorFraction = 0.50 },
+	hard = { reactionSteps = 9, speedFactor = 0.85, errorFraction = 0.12 }
+}
+
 local opponent = {
 	isEnabled = false,
-	reactionSteps = 9,
-	speedFactor = 0.85,
-	errorFraction = 0.12,
+	difficulty = 'normal',
+	reactionSteps = difficulties.normal.reactionSteps,
+	speedFactor = difficulties.normal.speedFactor,
+	errorFraction = difficulties.normal.errorFraction,
 	stepsUntilReaction = 0,
 	targetY = nil,
 	aimError = nil,
 	random = math.random
 }
+
+function opponent:setDifficulty(name)
+	local settings = difficulties[name]
+	if not settings then
+		return false
+	end
+
+	self.difficulty = name
+	self.reactionSteps = settings.reactionSteps
+	self.speedFactor = settings.speedFactor
+	self.errorFraction = settings.errorFraction
+	self:reset()
+	return true
+end
 
 function opponent:reset()
 	self.stepsUntilReaction = 0
