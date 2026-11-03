@@ -59,10 +59,6 @@ local gameScreen = {
 		height = 20,
 		width = 20,
 		isMoving = false,
-		direction = {
-			x = 'right',
-			y = 'none'
-		},
 		initialVelocity = 8,
 		maxXVelocity = 30,
 		maxYVelocity = 30,
@@ -72,10 +68,16 @@ local gameScreen = {
 	maxVerticalOffset = 0
 }
 
+gameScreen.pendingMovement = {}
+
 gameScreen.maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.offsetGap
 
 -- Handle fullscreen shift and recalculate the math
 function gameScreen:handleFullscreen()
+	local oldWidth, oldHeight = self.layoutWidth, self.layoutHeight
+	local oldLeftY, oldRightY = self.leftPaddle.y, self.rightPaddle.y
+	local oldBallX, oldBallY = self.ball.x, self.ball.y
+	self.layoutWidth, self.layoutHeight = systemConfig:getScreenWidth(), systemConfig:getScreenHeight()
 	local centerLine = (systemConfig:getScreenWidth() / 2)
 
 	-- Calculate divider dimensions
@@ -100,11 +102,11 @@ function gameScreen:handleFullscreen()
 	self.ball.width = self.paddleHeight / 10
 
 	-- Compute the baseline offsets
-	leftHorizontalOffset = self.offsetGap
-	leftVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.paddleHeight / 2)
+	local leftHorizontalOffset = self.offsetGap
+	local leftVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.paddleHeight / 2)
 
-	rightHorizontalOffset = systemConfig:getScreenWidth() - self.paddleWidth - self.offsetGap
-	rightVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.paddleHeight / 2)
+	local rightHorizontalOffset = systemConfig:getScreenWidth() - self.paddleWidth - self.offsetGap
+	local rightVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.paddleHeight / 2)
 
 	-- Set the game state
 	self.leftPaddle.x = leftHorizontalOffset
@@ -118,8 +120,26 @@ function gameScreen:handleFullscreen()
 
 	self:centerBall()
 
-	-- Set the global
+	-- Set the paddle movement limit
 	self.maxVerticalOffset = systemConfig:getScreenHeight() - self.paddleHeight - self.offsetGap
+	if oldWidth and oldHeight then
+		local heightScale = self.layoutHeight / oldHeight
+		local widthScale = self.layoutWidth / oldWidth
+		local leftY = oldLeftY * heightScale
+		local rightY = oldRightY * heightScale
+		local ballX = oldBallX * widthScale
+		local ballY = oldBallY * heightScale
+		local minBallX = self.leftPaddle.x + self.paddleWidth
+		local maxBallX = self.rightPaddle.x - self.ball.width
+		local maxBallY = self.lowerBoundary - self.ball.height
+
+		self.leftPaddle.y = math.max(self.offsetGap, math.min(self.maxVerticalOffset, leftY))
+		self.rightPaddle.y = math.max(self.offsetGap, math.min(self.maxVerticalOffset, rightY))
+		self.ball.x = math.max(minBallX, math.min(maxBallX, ballX))
+		self.ball.y = math.max(self.upperBoundary, math.min(maxBallY, ballY))
+	end
+
+	opponent:reset()
 end
 
 function gameScreen:advanceFrame()
@@ -127,10 +147,6 @@ function gameScreen:advanceFrame()
 
 	if self.ball.isMoving then
 		self:calculateBallPosition()
-	end
-
-	if self:ballDidCollide() then
-		self:handleBallVelocity()
 	end
 end
 
@@ -173,8 +189,8 @@ function gameScreen:drawScores(left, right)
 end
 
 function gameScreen:centerBall()
-	ballHorizontalOffset = (systemConfig:getScreenWidth() / 2) - (self.ball.width / 2)
-	ballVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.ball.height / 2)
+	local ballHorizontalOffset = (systemConfig:getScreenWidth() / 2) - (self.ball.width / 2)
+	local ballVerticalOffset = (systemConfig:getScreenHeight() / 2) - (self.ball.height / 2)
 
 	self.ball.x = ballHorizontalOffset
 	self.ball.y = ballVerticalOffset
@@ -186,143 +202,81 @@ function gameScreen:drawLossMarker()
 	love.graphics.rectangle( "fill", lastLoss.x - 2, lastLoss.y + lastLoss.value:getHeight(), lastLoss.value:getWidth(), self.offsetGap )
 end
 
-function gameScreen:calculateBallPosition()
-	local computedX
-	if self.ball.direction.x == 'left' then
-		computedX = self.ball.x - self.ballVelocity.x
-	else
-		computedX = self.ball.x + self.ballVelocity.x
-	end
-
-	self.ball.x = computedX
-
-	local computedY
-	if self.ball.direction.y == 'up' then
-		computedY = self.ball.y - self.ballVelocity.y
-	elseif self.ball.direction.y == 'down' then
-		computedY = self.ball.y + self.ballVelocity.y
-	else
-		computedY = self.ball.y
-	end
-
-	self.ball.y = computedY
-end
-
-function gameScreen:ballDidCollide()
-	local leftPaddle = self.leftPaddle
-	local rightPaddle = self.rightPaddle
+function gameScreen:findNextCollision(remaining)
 	local ball = self.ball
+	local velocity = self.ballVelocity
+	local collisionTime = remaining
+	local collisionSide = nil
 
-	-- Handle Bondary Collisions
-	local hitCeiling = ball.y <= self.upperBoundary
-	if hitCeiling then
-		self.ballVelocity.y = self.ballVelocity.y * -1
-
-		return false
-	end
-
-	local hitFloor = ball.y + ball.height >= self.lowerBoundary
-	if hitFloor then
-		self.ballVelocity.y = self.ballVelocity.y * -1
-
-		return false
-	end
-
-	-- Coordinates Collided Left Paddle
-	if ball.x <= (leftPaddle.x + self.paddleWidth) then
-		local isBelowPaddle = ball.y > (leftPaddle.y + self.paddleHeight)
-		local isAbovePaddle = ball.y + ball.height < leftPaddle.y
-		if isBelowPaddle or isAbovePaddle then
-			self:handleLoss("left")
-
-			return false
+	local function considerCollision(time, side)
+		if time >= 0 and time <= collisionTime then
+			collisionTime = time
+			collisionSide = side
 		end
-
-		self:handleLeftPaddleCollision()
-
-		return true
 	end
 
-	-- Coordinates Collided Right Paddle
-	if (ball.x + self.ball.width) >= rightPaddle.x then
-		local isBelowPaddle = ball.y > (rightPaddle.y + self.paddleHeight)
-		local isAbovePaddle = ball.y + ball.height < rightPaddle.y
-		if isBelowPaddle or isAbovePaddle then
-			self:handleLoss("right")
-
-			return false
-		end
-
-		self:handleRightPaddleCollision()
-
-		return true
+	if velocity.y < 0 then
+		considerCollision((self.upperBoundary - ball.y) / velocity.y, 'wall')
+	elseif velocity.y > 0 then
+		considerCollision((self.lowerBoundary - ball.height - ball.y) / velocity.y, 'wall')
 	end
 
-	return false
+	if velocity.x < 0 then
+		considerCollision((self.leftPaddle.x + self.paddleWidth - ball.x) / velocity.x, 'left')
+	elseif velocity.x > 0 then
+		considerCollision((self.rightPaddle.x - ball.width - ball.x) / velocity.x, 'right')
+	end
+
+	return collisionTime, collisionSide
 end
 
-function gameScreen:handleLeftPaddleCollision()
-	self:handleBallAngle(self.leftPaddle, 'left')
-end
+function gameScreen:calculateBallPosition()
+	local ball = self.ball
+	local velocity = self.ballVelocity
+	local remaining = 1
 
-function gameScreen:handleRightPaddleCollision()
-	self:handleBallAngle(self.rightPaddle, 'right')
+	-- Resolve the earliest crossing first, including multiple impacts in a step.
+	while remaining > 0 and ball.isMoving do
+		local collisionTime, collisionSide = self:findNextCollision(remaining)
+
+		ball.x = ball.x + velocity.x * collisionTime
+		ball.y = ball.y + velocity.y * collisionTime
+		remaining = remaining - collisionTime
+
+		if collisionSide == 'wall' then
+			velocity.y = -velocity.y
+		elseif collisionSide then
+			local paddle = self.rightPaddle
+			if collisionSide == 'left' then
+				paddle = self.leftPaddle
+			end
+
+			if ball.y > paddle.y + self.paddleHeight or ball.y + ball.height < paddle.y then
+				self:handleLoss(collisionSide)
+			else
+				self:handleBallAngle(paddle, collisionSide)
+			end
+		else
+			break
+		end
+	end
 end
 
 function gameScreen:handleBallAngle(paddle, side)
-	local ball = self.ball
-	local computedBallPosition = (ball.y + ball.height) - paddle.y
-	local percentageOfPaddle = (computedBallPosition / self.paddleHeight) * 100
+	local ballCenter = self.ball.y + self.ball.height / 2
+	local paddleCenter = paddle.y + self.paddleHeight / 2
+	local relativePosition = (ballCenter - paddleCenter) / (self.paddleHeight / 2)
+	relativePosition = math.max(-1, math.min(1, relativePosition))
 
-	if percentageOfPaddle < 40 then
-		self.ball.direction.y = 'up'
-
-		local computedVelocity = (1 * percentageOfPaddle) / 10
-		if computedVelocity <= 1 then
-			computedVelocity = 1 * percentageOfPaddle
-		end
-
-		self.ballVelocity.y = computedVelocity
-	elseif percentageOfPaddle > 60 then
-		local computedBallVelocity = 1 * (percentageOfPaddle - 60)
-
-		self.ball.direction.y = 'down'
-		self.ballVelocity.y = computedBallVelocity / 10
-	else
-		self.ball.direction.y = 'none'
-		self.ballVelocity.y = 0
-	end
-
+	local speed = math.min(self.ball.maxXVelocity, math.abs(self.ballVelocity.x) + self.ball.velocityCompoundFactor)
+	local verticalSpeed = math.min(self.ball.maxYVelocity, speed * 0.75)
 	if side == 'left' then
-		self.ball.direction.x = 'right'
-		self.ball.x = paddle.x + self.ball.width
+		self.ballVelocity.x = speed
 	else
-		self.ball.direction.x = 'left'
-		self.ball.x = paddle.x - self.ball.width
-	end
-end
-
-function gameScreen:handleBallVelocity()
-	local maxXVelocity = self.ball.maxXVelocity
-	local maxYVelocity = self.ball.maxYVelocity
-	local compoundFactor = self.ball.velocityCompoundFactor
-
-	local velocityX = self.ballVelocity.x
-	local velocityY = self.ballVelocity.y
-
-	local computedX = velocityX + compoundFactor
-	if computedX >= maxXVelocity then
-		self.ballVelocity.x = self.ballVelocity.x
-	else
-		self.ballVelocity.x = computedX
+		self.ballVelocity.x = -speed
 	end
 
-	local computedY = velocityY + compoundFactor
-	if computedY >= maxYVelocity then
-		self.ballVelocity.y = self.ballVelocity.y
-	else
-		self.ballVelocity.y = computedY
-	end
+	self.ballVelocity.y = relativePosition * verticalSpeed
 end
 
 function gameScreen:handleLoss(side)
@@ -333,6 +287,7 @@ function gameScreen:handleLoss(side)
 
 	self.ballVelocity.x = 0
 	self.ballVelocity.y = 0
+	opponent:reset()
 
 	if side == 'left' then
 		self.scores.right.score = self.scores.right.score + 1
@@ -348,75 +303,48 @@ end
 
 function gameScreen:handleKeypresses(key, scancode, isrepeat)
 	if key == "space" and self.ball.isMoving == false then
-		self.ballVelocity.x = self.lastLoss == 'right' and 4 or -4
-		if self.lastLoss == 'none' then
+		if self.lastLoss == 'left' then
+			self.ballVelocity.x = -self.ball.initialVelocity
+		else
 			self.ballVelocity.x = self.ball.initialVelocity
 		end
 
 		self.ball.isMoving = true
 	end
 
-	if key == "w" then
-		local computed = self.leftPaddle.y - self.paddleVelocity
-
-		if computed < self.offsetGap then
-			self.leftPaddle.y = self.offsetGap
-		else
-			self.leftPaddle.y = computed
-		end
-	end
-
-	if key == "s" then
-		local computed = self.leftPaddle.y + self.paddleVelocity
-
-		if computed > self.maxVerticalOffset then
-			self.leftPaddle.y = self.maxVerticalOffset
-		else
-			self.leftPaddle.y = computed
-		end
-	end
-
-	if opponent.isEnabled then
-		return
-	end
-
-	if key == "up" then
-		local computed = self.rightPaddle.y - self.paddleVelocity
-
-		if computed < 8 then
-			self.rightPaddle.y = self.offsetGap
-		else
-			self.rightPaddle.y = computed
-		end
-	end
-
-	if key == "down" then
-		local computed = self.rightPaddle.y + self.paddleVelocity
-
-		if computed > self.maxVerticalOffset then
-			self.rightPaddle.y = self.maxVerticalOffset
-		else
-			self.rightPaddle.y = computed
-		end
+	if not isrepeat and (key == "w" or key == "s" or key == "up" or key == "down") then
+		self.pendingMovement[key] = true
 	end
 end
 
+function gameScreen:movePaddle(paddle, amount)
+	paddle.y = math.max(self.offsetGap, math.min(self.maxVerticalOffset, paddle.y + amount))
+end
+
+function gameScreen:movementDirection(isDown, upKey, downKey)
+	local direction = 0
+
+	if isDown(upKey) or self.pendingMovement[upKey] then
+		direction = direction - 1
+	end
+
+	if isDown(downKey) or self.pendingMovement[downKey] then
+		direction = direction + 1
+	end
+
+	return direction
+end
+
 function gameScreen:handleHeldkey(isDown)
-	if isDown("w") then
-		self:handleKeypresses("w", "", "")
+	local leftDirection = self:movementDirection(isDown, "w", "s")
+	self:movePaddle(self.leftPaddle, leftDirection * self.paddleVelocity)
+
+	if not opponent.isEnabled then
+		local rightDirection = self:movementDirection(isDown, "up", "down")
+		self:movePaddle(self.rightPaddle, rightDirection * self.paddleVelocity)
 	end
 
-	if isDown("s") then
-		self:handleKeypresses("s", "", "")
-	end
-
-	if isDown("up") then
-		self:handleKeypresses("up", "", "")
-	end
-
-	if isDown("down") then
-		self:handleKeypresses("down", "", "")
-	end
+	self.pendingMovement = {}
 end
 
 return gameScreen
