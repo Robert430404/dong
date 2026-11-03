@@ -16,10 +16,12 @@ function support.newGame()
 	end
 
 	local textInput = nil
+	local screenWidth = 1280
+	local screenHeight = 720
 	love = {
 		graphics = {
-			getWidth = function() return 1280 end,
-			getHeight = function() return 720 end,
+			getWidth = function() return screenWidth end,
+			getHeight = function() return screenHeight end,
 			newFont = function() return {} end,
 			newText = function()
 				return {
@@ -48,6 +50,11 @@ function support.newGame()
 	}
 
 	fixture.game:handleFullscreen()
+	function fixture:setScreenSize(width, height)
+		screenWidth = width
+		screenHeight = height
+	end
+
 	return fixture
 end
 

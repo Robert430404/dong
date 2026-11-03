@@ -4,12 +4,15 @@ local opponent = {
 	speedFactor = 0.85,
 	errorFraction = 0.12,
 	stepsUntilReaction = 0,
-	targetY = nil
+	targetY = nil,
+	aimError = nil,
+	random = math.random
 }
 
 function opponent:reset()
 	self.stepsUntilReaction = 0
 	self.targetY = nil
+	self.aimError = nil
 end
 
 function opponent:setStatus(isEnabled)
@@ -20,6 +23,10 @@ end
 function opponent:run(gameState)
 	if not self.isEnabled then
 		return
+	end
+
+	if not gameState.ball.isMoving or gameState.ballVelocity.x <= 0 then
+		self.aimError = nil
 	end
 
 	self.stepsUntilReaction = self.stepsUntilReaction - 1
@@ -51,7 +58,11 @@ function opponent:chooseTarget(gameState)
 			target = upperBound + projected + ball.height / 2
 		end
 
-		local error = (math.random() * 2 - 1) * gameState.paddleHeight * self.errorFraction
+		if self.aimError == nil then
+			self.aimError = self.random() * 2 - 1
+		end
+
+		local error = self.aimError * gameState.paddleHeight * self.errorFraction
 		target = target + error
 	end
 
