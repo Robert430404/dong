@@ -11,3 +11,4 @@ Run from the repository directory with `love .`.
 The game simulates at a fixed 60 steps per second independently of rendering. In one-player mode, the opponent predicts the ball's arrival with a limited reaction rate, speed, and accuracy; these settings are in `opponent.lua`.
 
 Run the headless regression checks with `luajit tests/run.lua` (or `lua tests/run.lua`).
+Run a single suite with `luajit tests/run.lua collisions`, or select a scenario by name, for example `luajit tests/run.lua collisions 'ceiling reflects the ball once'`.

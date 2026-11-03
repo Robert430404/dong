@@ -1,0 +1,9 @@
+# Test baseline
+
+Always inspect the current branch before relying on these details. The original `main` branch inspected for this bundle had no checked-in test suite. The timing-and-opponent feature branch has `tests/run.lua`, a runner with minimal LÖVE stubs in `tests/support.lua`. Run all suites from the repository root with `luajit tests/run.lua` or `lua tests/run.lua` using a compatible interpreter. Run a focused suite with `luajit tests/run.lua collisions`, or one scenario with `luajit tests/run.lua collisions 'ceiling reflects the ball once'`.
+
+Suites under `tests/suites/` group named scenarios by timing, input, collisions, scoring, and opponent behavior. Register new suite names in `tests/run.lua`. Each scenario creates a fresh fixture with `support.newGame()`, which reloads game modules and resets the LÖVE stubs; don't retain module references across fixtures. Add distinct scenarios for distinct behaviors rather than chaining unrelated cases. Verify actual contents and coverage before making claims: the suite stubs LÖVE and does not drive a real window or physical keyboard.
+
+For changes to timing, test equal elapsed time at multiple update rates and explicit pause/backlog policy. For collisions, cover both sides, wall and corner cases, high-speed crossings, and scoring once. For the opponent, control randomness and check reaction, clamping, reset, and absence of unintended physics mutations. Choose cases relevant to the change rather than assuming this list is already covered.
+
+Run real LÖVE separately when available. Record whether installation, display, input, and interactive testing were actually available; do not treat a stubbed test or process launch as a playtest. Update this reference when the test runner or suite materially changes.

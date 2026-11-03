@@ -18,31 +18,54 @@ function opponent:setStatus(isEnabled)
 end
 
 function opponent:run(gameState)
-	if not self.isEnabled then return end
+	if not self.isEnabled then
+		return
+	end
 
-	local ball = gameState.ball
-	local velocity = gameState.ballVelocity
 	self.stepsUntilReaction = self.stepsUntilReaction - 1
 	if self.stepsUntilReaction <= 0 then
 		self.stepsUntilReaction = self.reactionSteps
-		local target = (gameState.upperBoundary + gameState.lowerBoundary) / 2
-		if ball.isMoving and velocity.x > 0 then
-			local travel = math.max(0, (gameState.rightPaddle.x - ball.width - ball.x) / velocity.x)
-			local minY = gameState.upperBoundary
-			local range = gameState.lowerBoundary - ball.height - minY
-			if range > 0 then
-				local projected = (ball.y - minY + velocity.y * travel) % (2 * range)
-				target = minY + (projected <= range and projected or 2 * range - projected) + ball.height / 2
-			end
-			target = target + (math.random() * 2 - 1) * gameState.paddleHeight * self.errorFraction
-		end
-		self.targetY = math.max(gameState.offsetGap, math.min(gameState.maxVerticalOffset, target - gameState.paddleHeight / 2))
+		self:chooseTarget(gameState)
 	end
 
+	self:moveTowardTarget(gameState)
+end
+
+function opponent:chooseTarget(gameState)
+	local ball = gameState.ball
+	local velocity = gameState.ballVelocity
+	local target = (gameState.upperBoundary + gameState.lowerBoundary) / 2
+
+	if ball.isMoving and velocity.x > 0 then
+		local distance = gameState.rightPaddle.x - ball.width - ball.x
+		local travel = math.max(0, distance / velocity.x)
+		local upperBound = gameState.upperBoundary
+		local range = gameState.lowerBoundary - ball.height - upperBound
+
+		if range > 0 then
+			local projected = (ball.y - upperBound + velocity.y * travel) % (2 * range)
+			if projected > range then
+				projected = 2 * range - projected
+			end
+
+			target = upperBound + projected + ball.height / 2
+		end
+
+		local error = (math.random() * 2 - 1) * gameState.paddleHeight * self.errorFraction
+		target = target + error
+	end
+
+	local targetY = target - gameState.paddleHeight / 2
+	self.targetY = math.max(gameState.offsetGap, math.min(gameState.maxVerticalOffset, targetY))
+end
+
+function opponent:moveTowardTarget(gameState)
 	local difference = self.targetY - gameState.rightPaddle.y
 	local speed = gameState.paddleVelocity * self.speedFactor
+
 	if math.abs(difference) > 2 then
-		gameState:movePaddle(gameState.rightPaddle, math.max(-speed, math.min(speed, difference)))
+		local movement = math.max(-speed, math.min(speed, difference))
+		gameState:movePaddle(gameState.rightPaddle, movement)
 	end
 end
 
