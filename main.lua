@@ -3,10 +3,11 @@ local keybindConfig = require 'config.keybindConfig'
 local systemConfig = require 'config.systemConfig'
 local opponent = require 'opponent'
 
-local initTime
+local step = 1 / systemConfig:getTargetFrames()
+local accumulator = 0
 
 function love.load()
-	initTime = love.timer.getTime()
+	math.randomseed(os.time())
 end
 
 function love.resize()
@@ -14,13 +15,11 @@ function love.resize()
 end
 
 function love.update(dt)
-	local currentTime = love.timer.getTime()
-	local timeDelta = currentTime - initTime
-
-	if timeDelta > 1 / systemConfig:getTargetFrames() then
-		renderer:advanceFrame()
+	accumulator = accumulator + math.min(dt, 0.25)
+	while accumulator >= step do
 		renderer:handleHeldkey(love.keyboard.isDown)
-		initTime = love.timer.getTime()
+		renderer:advanceFrame()
+		accumulator = accumulator - step
 	end
 end
 

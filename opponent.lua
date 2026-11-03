@@ -1,126 +1,49 @@
 local opponent = {
 	isEnabled = false,
-
-	hasRolledForTurn = false,
-	rollResult = nil
+	reactionSteps = 9,
+	speedFactor = 0.85,
+	errorFraction = 0.12,
+	stepsUntilReaction = 0,
+	targetY = nil
 }
 
-function opponent:run(gameState)
-	if self.isEnabled == false then
-		return
-	end
-
-	local ballUpperBound = gameState.ball.y
-	local ballLowerBound = gameState.ball.y + gameState.ball.height
-
-	local paddleUpperBound = gameState.rightPaddle.y
-	local paddleLowerBound = gameState.rightPaddle.y + gameState.paddleHeight
-
-	local isBallAbovePaddle = ballLowerBound < paddleUpperBound
-	local isBallUnderPaddle = ballUpperBound > paddleLowerBound
-
-	if isBallAbovePaddle then
-		self:handleBallAbovePaddle(gameState)
-	elseif isBallUnderPaddle then
-		self:handleBallUnderPaddle(gameState)
-	else
-		self:handleBallInsideOfBounds(gameState)
-	end
-end
-
-function opponent:handleBallAbovePaddle(gameState)
-	local newPaddleY = gameState.rightPaddle.y - gameState.paddleVelocity
-
-	if newPaddleY < 8 then
-		gameState.rightPaddle.y = gameState.offsetGap
-	else
-		gameState.rightPaddle.y = newPaddleY
-	end
-end
-
-function opponent:handleBallUnderPaddle(gameState)
-	local computed = gameState.rightPaddle.y + gameState.paddleVelocity
-
-	if computed > gameState.maxVerticalOffset then
-		gameState.rightPaddle.y = gameState.maxVerticalOffset
-	else
-		gameState.rightPaddle.y = computed
-	end
-end
-
-function opponent:handleBallInsideOfBounds(gameState)
-	if gameState:ballDidCollide() then
-		hasRolledForTurn = false
-	end
-
-	if hasRolledForTurn == false then
-		self:determineVolleyTarget()
-
-		hasRolledForTurn = true
-	end
-
-	self:handleVolleyTarget(gameState)
-end
-
-function opponent:determineVolleyTarget()
-	math.randomseed(os.time())
-
-	local randomNumber = math.random(1, 9)
-
-	if randomNumber <= 3 then
-		self.rollResult = 'upper_portion'
-	elseif randomNumber >=4 and randomNumber <= 6 then
-		self.rollResult = 'middle_portion'
-	else
-		self.rollResult = 'lower_portion'
-	end
-end
-
-function opponent:handleVolleyTarget(gameState)
-	local ballUpperBound = gameState.ball.y
-	local ballLowerBound = gameState.ball.y + gameState.ball.height
-
-	if self.rollResult == 'upper_portion' then
-		local paddleUpperBound = gameState.rightPaddle.y
-		local paddleLowerBound = gameState.rightPaddle.y + (gameState.paddleHeight / 3)
-
-		local isBallAboveSegment = ballLowerBound < paddleUpperBound
-		local isBallUnderSegment = ballUpperBound > paddleLowerBound
-
-		if isBallAboveSegment then
-			self:handleBallAbovePaddle(gameState)
-		elseif isBallUnderSegment then
-			self:handleBallUnderPaddle(gameState)
-		end
-	elseif self.rollResult == 'middle_portion' then
-		local paddleUpperBound = gameState.rightPaddle.y + (gameState.paddleHeight / 3)
-		local paddleLowerBound = gameState.rightPaddle.y + ((gameState.paddleHeight / 3) * 2)
-
-		local isBallAboveSegment = ballLowerBound < paddleUpperBound
-		local isBallUnderSegment = ballUpperBound > paddleLowerBound
-
-		if isBallAboveSegment then
-			self:handleBallAbovePaddle(gameState)
-		elseif isBallUnderSegment then
-			self:handleBallUnderPaddle(gameState)
-		end
-	else
-		local paddleUpperBound = gameState.rightPaddle.y + ((gameState.paddleHeight / 3) * 2)
-		local paddleLowerBound = gameState.rightPaddle.y + gameState.paddleHeight
-
-		local isBallAboveSegment = ballLowerBound < paddleUpperBound
-		local isBallUnderSegment = ballUpperBound > paddleLowerBound
-
-		if isBallAboveSegment then
-			self:handleBallAbovePaddle(gameState)
-		elseif isBallUnderSegment then
-			self:handleBallUnderPaddle(gameState)
-		end
-	end
+function opponent:reset()
+	self.stepsUntilReaction = 0
+	self.targetY = nil
 end
 
 function opponent:setStatus(isEnabled)
 	self.isEnabled = isEnabled
+	self:reset()
+end
+
+function opponent:run(gameState)
+	if not self.isEnabled then return end
+
+	local ball = gameState.ball
+	local velocity = gameState.ballVelocity
+	self.stepsUntilReaction = self.stepsUntilReaction - 1
+	if self.stepsUntilReaction <= 0 then
+		self.stepsUntilReaction = self.reactionSteps
+		local target = (gameState.upperBoundary + gameState.lowerBoundary) / 2
+		if ball.isMoving and velocity.x > 0 then
+			local travel = math.max(0, (gameState.rightPaddle.x - ball.width - ball.x) / velocity.x)
+			local minY = gameState.upperBoundary
+			local range = gameState.lowerBoundary - ball.height - minY
+			if range > 0 then
+				local projected = (ball.y - minY + velocity.y * travel) % (2 * range)
+				target = minY + (projected <= range and projected or 2 * range - projected) + ball.height / 2
+			end
+			target = target + (math.random() * 2 - 1) * gameState.paddleHeight * self.errorFraction
+		end
+		self.targetY = math.max(gameState.offsetGap, math.min(gameState.maxVerticalOffset, target - gameState.paddleHeight / 2))
+	end
+
+	local difference = self.targetY - gameState.rightPaddle.y
+	local speed = gameState.paddleVelocity * self.speedFactor
+	if math.abs(difference) > 2 then
+		gameState:movePaddle(gameState.rightPaddle, math.max(-speed, math.min(speed, difference)))
+	end
 end
 
 return opponent
