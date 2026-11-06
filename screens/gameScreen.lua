@@ -1,5 +1,6 @@
 local systemConfig = require 'config.systemConfig'
 local opponent = require 'opponent'
+local powerUpManager = require 'powerups.manager'
 
 local scoreFont = love.graphics.newFont( "assets/doto-regular.ttf", 48 )
 
@@ -69,6 +70,8 @@ local gameScreen = {
 }
 
 gameScreen.pendingMovement = {}
+gameScreen.balls = { { ball = gameScreen.ball, velocity = gameScreen.ballVelocity } }
+gameScreen.powerUps = powerUpManager:new()
 
 gameScreen.maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.offsetGap
 
@@ -122,6 +125,10 @@ function gameScreen:handleFullscreen()
 
 	-- Set the paddle movement limit
 	self.maxVerticalOffset = systemConfig:getScreenHeight() - self.paddleHeight - self.offsetGap
+	if not self.powerUpsInitialized then
+		self.powerUps:reset(systemConfig:getTargetFrames())
+		self.powerUpsInitialized = true
+	end
 	if oldWidth and oldHeight then
 		local heightScale = self.layoutHeight / oldHeight
 		local widthScale = self.layoutWidth / oldWidth
@@ -143,10 +150,37 @@ function gameScreen:handleFullscreen()
 end
 
 function gameScreen:advanceFrame()
+	for _, entry in ipairs(self.balls) do
+		if entry.ball.isMoving then
+			self.powerUps:advanceFrame(self.balls, systemConfig:getScreenWidth(), systemConfig:getScreenHeight())
+			break
+		end
+	end
+
 	opponent:run(self)
 
-	if self.ball.isMoving then
-		self:calculateBallPosition()
+	local ballsAtStart = #self.balls
+	for index = 1, ballsAtStart do
+		local entry = self.balls[index]
+		if entry.ball.isMoving then
+			self.rallyInProgress = true
+			self:calculateBallPosition(entry)
+		end
+	end
+
+	local activeBalls = {}
+	for _, entry in ipairs(self.balls) do
+		if entry.ball.isMoving then
+			table.insert(activeBalls, entry)
+		end
+	end
+
+	if #activeBalls > 0 then
+		self.balls = activeBalls
+		self.ball = activeBalls[1].ball
+		self.ballVelocity = activeBalls[1].velocity
+	elseif ballsAtStart > 0 and self.rallyInProgress then
+		self:resetRally()
 	end
 end
 
@@ -167,16 +201,20 @@ function gameScreen:render()
 	self:drawPaddle(self.leftPaddle.x, self.leftPaddle.y)
 	self:drawPaddle(self.rightPaddle.x, self.rightPaddle.y)
 
+	self.powerUps:draw()
+
 	love.graphics.setColor( love.math.colorFromBytes(246, 207, 133) )
-	self:drawBall(self.ball.x, self.ball.y)
+	for _, entry in ipairs(self.balls) do
+		self:drawBall(entry.ball)
+	end
 end
 
 function gameScreen:drawPaddle(x, y)
 	love.graphics.rectangle( "fill", x, y, self.paddleWidth, self.paddleHeight )
 end
 
-function gameScreen:drawBall(x, y)
-	love.graphics.rectangle( "fill", x, y, self.ball.width, self.ball.height )
+function gameScreen:drawBall(ball)
+	love.graphics.rectangle( "fill", ball.x, ball.y, ball.width, ball.height )
 end
 
 function gameScreen:drawDivider(x, y)
@@ -202,9 +240,7 @@ function gameScreen:drawLossMarker()
 	love.graphics.rectangle( "fill", lastLoss.x - 2, lastLoss.y + lastLoss.value:getHeight(), lastLoss.value:getWidth(), self.offsetGap )
 end
 
-function gameScreen:findNextCollision(remaining)
-	local ball = self.ball
-	local velocity = self.ballVelocity
+function gameScreen:findNextCollision(remaining, ball, velocity)
 	local collisionTime = remaining
 	local collisionSide = nil
 
@@ -227,17 +263,22 @@ function gameScreen:findNextCollision(remaining)
 		considerCollision((self.rightPaddle.x - ball.width - ball.x) / velocity.x, 'right')
 	end
 
+	local item, itemTime = self.powerUps:findCollision(ball, velocity, remaining)
+	if item and itemTime <= collisionTime then
+		return itemTime, 'powerUp', item
+	end
+
 	return collisionTime, collisionSide
 end
 
-function gameScreen:calculateBallPosition()
-	local ball = self.ball
-	local velocity = self.ballVelocity
+function gameScreen:calculateBallPosition(entry)
+	local ball = entry.ball
+	local velocity = entry.velocity
 	local remaining = 1
 
 	-- Resolve the earliest crossing first, including multiple impacts in a step.
 	while remaining > 0 and ball.isMoving do
-		local collisionTime, collisionSide = self:findNextCollision(remaining)
+		local collisionTime, collisionSide, item = self:findNextCollision(remaining, ball, velocity)
 
 		ball.x = ball.x + velocity.x * collisionTime
 		ball.y = ball.y + velocity.y * collisionTime
@@ -245,6 +286,8 @@ function gameScreen:calculateBallPosition()
 
 		if collisionSide == 'wall' then
 			velocity.y = -velocity.y
+		elseif collisionSide == 'powerUp' then
+			self.powerUps:activate(item, self, entry)
 		elseif collisionSide then
 			local paddle = self.rightPaddle
 			if collisionSide == 'left' then
@@ -252,9 +295,9 @@ function gameScreen:calculateBallPosition()
 			end
 
 			if ball.y > paddle.y + self.paddleHeight or ball.y + ball.height < paddle.y then
-				self:handleLoss(collisionSide)
+				self:handleLoss(collisionSide, entry)
 			else
-				self:handleBallAngle(paddle, collisionSide)
+				self:handleBallAngle(paddle, collisionSide, entry)
 			end
 		else
 			break
@@ -262,32 +305,42 @@ function gameScreen:calculateBallPosition()
 	end
 end
 
-function gameScreen:handleBallAngle(paddle, side)
-	local ballCenter = self.ball.y + self.ball.height / 2
+function gameScreen:handleBallAngle(paddle, side, entry)
+	local ball = entry.ball
+	ball.isOpeningServe = false
+	local velocity = entry.velocity
+	local ballCenter = ball.y + ball.height / 2
 	local paddleCenter = paddle.y + self.paddleHeight / 2
 	local relativePosition = (ballCenter - paddleCenter) / (self.paddleHeight / 2)
 	relativePosition = math.max(-1, math.min(1, relativePosition))
 
-	local speed = math.min(self.ball.maxXVelocity, math.abs(self.ballVelocity.x) + self.ball.velocityCompoundFactor)
-	local verticalSpeed = math.min(self.ball.maxYVelocity, speed * 0.75)
-	if side == 'left' then
-		self.ballVelocity.x = speed
-	else
-		self.ballVelocity.x = -speed
+	local speedFactor = 1
+	if opponent.isEnabled then
+		speedFactor = opponent.ballSpeedFactor
 	end
 
-	self.ballVelocity.y = relativePosition * verticalSpeed
+	local maxXVelocity = ball.maxXVelocity * speedFactor
+	local maxYVelocity = ball.maxYVelocity * speedFactor
+	local baseXVelocity = math.abs(velocity.x) / (entry.speedBoost or 1)
+	entry.speedBoost = nil
+	local speed = math.min(maxXVelocity, baseXVelocity + ball.velocityCompoundFactor)
+	local verticalSpeed = math.min(maxYVelocity, speed * 0.75)
+	if side == 'left' then
+		velocity.x = speed
+	else
+		velocity.x = -speed
+	end
+
+	velocity.y = relativePosition * verticalSpeed
 end
 
-function gameScreen:handleLoss(side)
-	self.ball.isMoving = false
+function gameScreen:addBall(ball, velocity, speedBoost)
+	table.insert(self.balls, { ball = ball, velocity = velocity, speedBoost = speedBoost })
+end
+
+function gameScreen:handleLoss(side, entry)
+	entry.ball.isMoving = false
 	self.lastLoss = side
-
-	self:centerBall()
-
-	self.ballVelocity.x = 0
-	self.ballVelocity.y = 0
-	opponent:reset()
 
 	if side == 'left' then
 		self.scores.right.score = self.scores.right.score + 1
@@ -298,11 +351,21 @@ function gameScreen:handleLoss(side)
 	self.scores.left.value:set( string.format("L%s W%s", self.scores.right.score, self.scores.left.score) )
 	self.scores.right.value:set( string.format("L%s W%s", self.scores.left.score, self.scores.right.score) )
 
+end
+
+function gameScreen:resetRally()
+	self.rallyInProgress = false
+	self.ball.isMoving = false
+	self.ballVelocity.x = 0
+	self.ballVelocity.y = 0
+	self.balls = { { ball = self.ball, velocity = self.ballVelocity } }
+	self:centerBall()
+	self.powerUps:reset(systemConfig:getTargetFrames())
 	self:handleFullscreen()
 end
 
 function gameScreen:handleKeypresses(key, scancode, isrepeat)
-	if key == "space" and self.ball.isMoving == false then
+	if key == "space" and not self.rallyInProgress and self.ball.isMoving == false then
 		if self.lastLoss == 'left' then
 			self.ballVelocity.x = -self.ball.initialVelocity
 		else
@@ -310,6 +373,8 @@ function gameScreen:handleKeypresses(key, scancode, isrepeat)
 		end
 
 		self.ball.isMoving = true
+		self.ball.isOpeningServe = true
+		self.rallyInProgress = true
 	end
 
 	if not isrepeat and (key == "w" or key == "s" or key == "up" or key == "down") then

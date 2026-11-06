@@ -8,7 +8,13 @@ function support.newGame()
 		'screens.renderer',
 		'screens.titleScreen',
 		'screens.gameScreen',
-		'opponent'
+		'opponent',
+		'powerups.manager',
+		'powerups.registry',
+		'powerups.splitBall',
+		'powerups.slowDown',
+		'powerups.speedShift',
+		'powerups.layout'
 	}
 
 	for _, name in ipairs(modules) do
@@ -19,6 +25,7 @@ function support.newGame()
 	local screenWidth = 1280
 	local screenHeight = 720
 	local drawnText = {}
+	local shapes = {}
 	local transform = {}
 	love = {
 		graphics = {
@@ -36,7 +43,13 @@ function support.newGame()
 			end,
 			setColor = function() end,
 			draw = function(text) table.insert(drawnText, text:getText()) end,
-			rectangle = function() end,
+			rectangle = function(mode, x, y, width, height)
+				table.insert(shapes, { mode = mode, x = x, y = y, width = width, height = height })
+			end,
+			line = function(...)
+				table.insert(shapes, { mode = 'polyline', points = { ... } })
+			end,
+			setLineWidth = function() end,
 			push = function() end,
 			pop = function() end,
 			translate = function(x, y) transform.x, transform.y = x, y end,
@@ -71,6 +84,9 @@ function support.newGame()
 	end
 	function fixture:getTransform()
 		return transform
+	end
+	function fixture:getShapes()
+		return shapes
 	end
 
 	return fixture

@@ -5,7 +5,8 @@ local suites = {
 	'collisions',
 	'scoring',
 	'opponent',
-	'resize'
+	'resize',
+	'powerups'
 }
 
 local requestedSuite = arg and arg[1]
