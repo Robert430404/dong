@@ -18,5 +18,13 @@ The game simulates at a fixed 60 steps per second independently of rendering. In
 
 The 16:9 playfield scales uniformly to fit the window, with bars when needed. Resizing or toggling fullscreen does not change the simulation's positions or speeds.
 
+## Project structure
+
+- `screens/gameScreen.lua` draws the game and routes screen input to the match.
+- `match.lua` owns match state, scoring, rally rules, and simulation-step orchestration.
+- `ballPhysics.lua` handles ball movement, collision ordering, and paddle bounces. `opponent.lua` controls the computer paddle, and `powerups/` contains power-up definitions and scheduling.
+
+## Tests
+
 Run the headless regression checks with `luajit tests/run.lua` (or `lua tests/run.lua`).
 Run a single suite with `luajit tests/run.lua collisions`, or select a scenario by name, for example `luajit tests/run.lua collisions 'ceiling reflects the ball once'`.
