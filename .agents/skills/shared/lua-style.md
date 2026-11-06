@@ -13,7 +13,7 @@ This reference describes tendencies observed in Dong's `main` branch, not a requ
 
 ## Game structure
 
-- `main.lua` owns LÖVE lifecycle callbacks, `screens/renderer.lua` dispatches screen operations, and `screens/titleScreen.lua` and `screens/gameScreen.lua` contain screen behavior. `opponent.lua` owns opponent behavior; `config/` holds system and keybind configuration. Reinspect the current branch because responsibilities can change.
+- `main.lua` owns LÖVE lifecycle callbacks, `screens/renderer.lua` dispatches screen operations, and the `screens/` modules own screen presentation and input routing. `match.lua` owns match state and rules; `ballPhysics.lua` handles ball movement and collisions. `opponent.lua` owns opponent behavior; `config/` holds system and keybind configuration. Reinspect the current branch because responsibilities can change.
 - Inspect how state, input, simulation, and drawing interact before changing a boundary. Do not assume that a function is pure because of its name or that an existing collision, timing, resize, or random-number pattern is correct.
 - Keep new code in the closest appropriate module; avoid introducing a framework or broad refactor for a small change. Make changes to behavior explicit and cover them with relevant tests.
 
