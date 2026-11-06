@@ -22,6 +22,7 @@ end
 
 function love.draw()
 	local scale, offsetX, offsetY = systemConfig:getViewport()
+	renderer:updateFontScale(scale * love.graphics.getDPIScale())
 	love.graphics.push()
 	love.graphics.translate(offsetX, offsetY)
 	love.graphics.scale(scale)

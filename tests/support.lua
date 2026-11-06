@@ -24,20 +24,29 @@ function support.newGame()
 	local textInput = nil
 	local screenWidth = 1280
 	local screenHeight = 720
+	local dpiScale = 1
 	local drawnText = {}
+	local fonts = {}
 	local shapes = {}
 	local transform = {}
 	love = {
 		graphics = {
 			getWidth = function() return screenWidth end,
 			getHeight = function() return screenHeight end,
-			newFont = function() return {} end,
+			getDPIScale = function() return dpiScale end,
+			newFont = function(path, size, hinting, density)
+				local font = { size = size, density = density }
+				table.insert(fonts, font)
+				return font
+			end,
 			newText = function(font, value)
 				local text = value
 				return {
 					getWidth = function() return 100 end,
 					getHeight = function() return 40 end,
 					set = function(_, newText) text = newText end,
+					setFont = function(_, newFont) font = newFont end,
+					getFont = function() return font end,
 					getText = function() return text end
 				}
 			end,
@@ -87,6 +96,12 @@ function support.newGame()
 	end
 	function fixture:getShapes()
 		return shapes
+	end
+	function fixture:setDPIScale(scale)
+		dpiScale = scale
+	end
+	function fixture:getFonts()
+		return fonts
 	end
 
 	return fixture

@@ -12,6 +12,18 @@ function renderer:render()
 	self[self.currentScreen]:render()
 end
 
+function renderer:updateFontScale(scale)
+	-- Use quarter-step density buckets to avoid rebuilding fonts for every resize pixel.
+	local fontScale = math.max(1, math.ceil(scale * 4) / 4)
+	if fontScale == self.fontScale then
+		return
+	end
+
+	self.title:updateFonts(fontScale)
+	self.game:updateFonts(fontScale)
+	self.fontScale = fontScale
+end
+
 function renderer:advanceFrame()
 	self[self.currentScreen]:advanceFrame()
 end

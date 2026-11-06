@@ -2,6 +2,7 @@ local suites = {
 	'timing',
 	'input',
 	'menu',
+	'fonts',
 	'collisions',
 	'scoring',
 	'opponent',

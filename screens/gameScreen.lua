@@ -75,6 +75,21 @@ gameScreen.powerUps = powerUpManager:new()
 
 gameScreen.maxVerticalOffset = systemConfig:getScreenHeight() - gameScreen.paddleHeight - gameScreen.offsetGap
 
+function gameScreen:layoutScores()
+	local centerLine = systemConfig:getScreenWidth() / 2
+	self.scores.left.x = (centerLine / 2) - (self.scores.left.value:getWidth() / 2)
+	self.scores.left.y = self.offsetGap
+	self.scores.right.x = centerLine + (centerLine / 2) - (self.scores.right.value:getWidth() / 2)
+	self.scores.right.y = self.offsetGap
+end
+
+function gameScreen:updateFonts(scale)
+	scoreFont = love.graphics.newFont( "assets/doto-regular.ttf", 48, "normal", scale )
+	self.scores.left.value:setFont(scoreFont)
+	self.scores.right.value:setFont(scoreFont)
+	self:layoutScores()
+end
+
 -- Handle fullscreen shift and recalculate the math
 function gameScreen:handleFullscreen()
 	local oldWidth, oldHeight = self.layoutWidth, self.layoutHeight
@@ -90,10 +105,7 @@ function gameScreen:handleFullscreen()
 	self.divider.y = 0
 
 	-- Calculate score dimensions
-	self.scores.left.x = (centerLine / 2) - (self.scores.left.value:getWidth() / 2)
-	self.scores.left.y = self.offsetGap
-	self.scores.right.x = centerLine + (centerLine / 2) - (self.scores.right.value:getWidth() / 2)
-	self.scores.right.y = self.offsetGap
+	self:layoutScores()
 
 	-- Calculate paddle dimensions
 	self.paddleHeight = systemConfig:getScreenHeight() / 4
