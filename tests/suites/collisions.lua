@@ -2,6 +2,44 @@ local support = require 'tests.support'
 
 return {
 	{
+		name = 'one-player difficulty caps ball speed after paddle hits',
+		run = function()
+			local presets = {
+				{ name = 'easy', factor = 0.65 },
+				{ name = 'normal', factor = 0.85 },
+				{ name = 'hard', factor = 1.00 }
+			}
+
+			for _, preset in ipairs(presets) do
+				local fixture = support.newGame()
+				local game = fixture.game
+				fixture.opponent:setDifficulty(preset.name)
+				fixture.opponent:setStatus(true)
+				local entry = game.balls[1]
+				entry.ball.y = game.leftPaddle.y + game.paddleHeight - entry.ball.height / 2
+				entry.velocity.x = -entry.ball.maxXVelocity
+
+				game:handleBallAngle(game.leftPaddle, 'left', entry)
+				support.near(entry.velocity.x, entry.ball.maxXVelocity * preset.factor)
+				support.near(entry.velocity.y, entry.ball.maxXVelocity * preset.factor * 0.75)
+			end
+		end
+	},
+	{
+		name = 'two-player ball speed is not affected by selected difficulty',
+		run = function()
+			local fixture = support.newGame()
+			local game = fixture.game
+			fixture.opponent:setDifficulty('easy')
+			fixture.opponent:setStatus(false)
+			local entry = game.balls[1]
+			entry.velocity.x = -entry.ball.maxXVelocity
+
+			game:handleBallAngle(game.leftPaddle, 'left', entry)
+			support.near(entry.velocity.x, entry.ball.maxXVelocity)
+		end
+	},
+	{
 		name = 'ceiling reflects the ball once',
 		run = function()
 			local game = support.newGame().game

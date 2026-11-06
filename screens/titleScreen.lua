@@ -37,6 +37,21 @@ local titleHeight = (systemConfig:getScreenHeight() / 2) - (titleText:getHeight(
 local startWidth = (systemConfig:getScreenWidth() / 2) - startText:getWidth() / 2
 local startHeight = (systemConfig:getScreenHeight() / 2) - (startText:getHeight() / 2) + startText:getHeight()
 
+function titleScreen:updateFonts(scale)
+	titleFont = love.graphics.newFont( "assets/doto-regular.ttf", 128, "normal", scale )
+	startFont = love.graphics.newFont( "assets/doto-regular.ttf", 52, "normal", scale )
+	modeSelectFont = love.graphics.newFont( "assets/doto-regular.ttf", 36, "normal", scale )
+	difficultyFont = love.graphics.newFont( "assets/doto-regular.ttf", 24, "normal", scale )
+
+	titleText:setFont(titleFont)
+	startText:setFont(startFont)
+	for _, mode in ipairs(modes) do
+		mode.text:setFont(modeSelectFont)
+	end
+	difficultyText:setFont(difficultyFont)
+	self:handleFullscreen()
+end
+
 -- Handle fullscreen shift and recalculate the math
 function titleScreen:handleFullscreen() 
 	titleWidth = (systemConfig:getScreenWidth() / 2) - titleText:getWidth() / 2

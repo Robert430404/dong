@@ -21,6 +21,24 @@ end
 
 return {
 	{
+		name = 'easy returns the opening serve even with maximum aim error',
+		run = function()
+			local fixture = support.newGame()
+			local game = fixture.game
+			fixture.opponent:setDifficulty('easy')
+			fixture.opponent:setStatus(true)
+			fixture.opponent.random = function() return 1 end
+			game:handleKeypresses('space')
+
+			for i = 1, 100 do
+				game:advanceFrame()
+			end
+
+			assert(game.scores.left.score == 0 and game.ballVelocity.x < 0, 'opening serve should be returned')
+			assert(not game.ball.isOpeningServe, 'opening serve ends on paddle contact')
+		end
+	},
+	{
 		name = 'easy can miss a reachable straight shot',
 		run = function()
 			local game = playStraightApproach('easy')

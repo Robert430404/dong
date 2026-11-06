@@ -2,10 +2,12 @@ local suites = {
 	'timing',
 	'input',
 	'menu',
+	'fonts',
 	'collisions',
 	'scoring',
 	'opponent',
-	'resize'
+	'resize',
+	'powerups'
 }
 
 local requestedSuite = arg and arg[1]
