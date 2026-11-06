@@ -19,7 +19,7 @@ return {
 				entry.ball.y = game.leftPaddle.y + game.paddleHeight - entry.ball.height / 2
 				entry.velocity.x = -entry.ball.maxXVelocity
 
-				game:handleBallAngle(game.leftPaddle, 'left', entry)
+				fixture.ballPhysics:handleBallAngle(game, game.leftPaddle, 'left', entry)
 				support.near(entry.velocity.x, entry.ball.maxXVelocity * preset.factor)
 				support.near(entry.velocity.y, entry.ball.maxXVelocity * preset.factor * 0.75)
 			end
@@ -35,7 +35,7 @@ return {
 			local entry = game.balls[1]
 			entry.velocity.x = -entry.ball.maxXVelocity
 
-			game:handleBallAngle(game.leftPaddle, 'left', entry)
+			fixture.ballPhysics:handleBallAngle(game, game.leftPaddle, 'left', entry)
 			support.near(entry.velocity.x, entry.ball.maxXVelocity)
 		end
 	},

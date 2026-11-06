@@ -3,6 +3,7 @@ local suites = {
 	'input',
 	'menu',
 	'fonts',
+	'match',
 	'collisions',
 	'scoring',
 	'opponent',

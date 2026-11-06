@@ -8,6 +8,8 @@ function support.newGame()
 		'screens.renderer',
 		'screens.titleScreen',
 		'screens.gameScreen',
+		'match',
+		'ballPhysics',
 		'opponent',
 		'powerups.manager',
 		'powerups.registry',
@@ -77,7 +79,9 @@ function support.newGame()
 	love.load()
 
 	local fixture = {
-		game = require 'screens.gameScreen',
+		game = require 'match',
+		gameScreen = require 'screens.gameScreen',
+		ballPhysics = require 'ballPhysics',
 		renderer = require 'screens.renderer',
 		opponent = require 'opponent',
 		textInput = textInput

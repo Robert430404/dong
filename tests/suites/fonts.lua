@@ -46,7 +46,7 @@ return {
 			fixture.renderer.currentScreen = 'game'
 			fixture.renderer.render = function() end
 			game.scores.left.score = 7
-			game.scores.left.value:set('L0 W7')
+			fixture.gameScreen:updateScores()
 			game.ball.isMoving = true
 			game.ball.x, game.ball.y = 400, 300
 			game.ballVelocity.x, game.ballVelocity.y = 8, -4
@@ -55,11 +55,11 @@ return {
 
 			love.draw()
 
-			assert(game.scores.left.value:getText() == 'L0 W7' and game.scores.left.score == 7)
+			assert(fixture.gameScreen.scores.left.value:getText() == 'L0 W7' and game.scores.left.score == 7)
 			assert(game.ball.isMoving and game.ball.x == 400 and game.ball.y == 300)
 			assert(game.ballVelocity.x == 8 and game.ballVelocity.y == -4)
 			assert(fixture.opponent.targetY == 240)
-			support.near(game.scores.left.x, 270)
+			support.near(fixture.gameScreen.scores.left.x, 270)
 		end
 	}
 }
